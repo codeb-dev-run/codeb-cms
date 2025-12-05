@@ -93,10 +93,10 @@ jobs:
             podman stop ${{ env.CONTAINER_NAME }} || true
             podman rm ${{ env.CONTAINER_NAME }} || true
 
+            # Download latest deployment script
+            curl -o deploy-podman-run.sh https://raw.githubusercontent.com/codeblabdev-max/codeb-cms/main/deploy-podman-run.sh
+            chmod +x deploy-podman-run.sh
+
             # Run deployment script
-            # We pass the image name as an environment variable or argument if needed, 
-            # but for now we'll rely on the script using the pulled image or we modify the script.
-            # Let's assume we will modify the script to use the GHCR image.
-            
             export APP_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
             ./deploy-podman-run.sh
