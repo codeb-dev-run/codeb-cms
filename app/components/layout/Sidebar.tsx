@@ -1,5 +1,5 @@
 import { Link, Form, useNavigation } from "@remix-run/react";
-import { TrendingUp, MessageCircle, Users, Clock, Eye, User, Lock } from "lucide-react";
+import { TrendingUp, MessageCircle, Users, Clock, Eye, User } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";

@@ -73,7 +73,7 @@ export class CacheManager extends EventEmitter {
   };
   
   // Pub/Sub for cache invalidation
-  private pubsubClient?: any;
+  private pubsubClient?: { subscribe: (channel: string, callback: (message: string) => void) => void; publish: (channel: string, message: string) => void };
   private invalidationChannel: string;
   
   constructor(namespace: string = 'app') {

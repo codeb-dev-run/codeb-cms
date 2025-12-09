@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useFetcher } from "@remix-run/react";
 import Tilt from "react-parallax-tilt";
-import { ThumbsUp, ThumbsDown } from "lucide-react";
 
 interface VoteBoxProps {
   topicId: string;

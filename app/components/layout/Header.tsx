@@ -1,4 +1,4 @@
-import { Link, Form, useFetcher } from "@remix-run/react";
+import { Link, Form } from "@remix-run/react";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -9,12 +9,10 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Menu, User, LogOut, Settings, Shield, PenSquare, Search, Bell } from "lucide-react";
+import { Menu, User, LogOut, Shield, PenSquare, Search, Bell } from "lucide-react";
 import { Navigation } from "./Navigation";
 import { ThemeToggle } from "~/components/ui/theme-toggle";
 import type { User as UserType } from "@prisma/client";
-import { cn } from "~/lib/utils";
-import { useEffect, useState } from "react";
 
 interface HeaderProps {
   user?: Pick<UserType, 'id' | 'email' | 'name' | 'username' | 'role'> | null;

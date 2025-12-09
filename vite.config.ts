@@ -134,7 +134,7 @@ export default defineConfig({
 function socketIOPlugin() {
   return {
     name: "socket-io-plugin",
-    configureServer(server) {
+    configureServer(server: { httpServer: { listening: boolean; on: (event: string, cb: () => void) => void } | null; ssrLoadModule: (path: string) => Promise<Record<string, unknown>> }) {
       console.log("🔌 Socket.IO Plugin: configureServer called");
       if (!server.httpServer) {
         console.log("🔌 Socket.IO Plugin: server.httpServer is missing");
@@ -142,29 +142,30 @@ function socketIOPlugin() {
       }
 
       console.log("🔌 Socket.IO Plugin: server.httpServer exists");
+      const httpServer = server.httpServer;
 
       const initSocket = () => {
         console.log("🔌 Socket.IO Plugin: Initializing Socket.IO...");
         server.ssrLoadModule("./app/lib/socket/socket.server.ts")
-          .then((module) => {
+          .then((module: Record<string, unknown>) => {
             console.log("🔌 Socket.IO Plugin: Module loaded", Object.keys(module));
-            if (module.initializeSocketIO) {
-              module.initializeSocketIO(server.httpServer);
+            if (typeof module.initializeSocketIO === 'function') {
+              module.initializeSocketIO(httpServer);
               console.log("🔌 Socket.IO Plugin: initializeSocketIO called");
             } else {
               console.error("🔌 Socket.IO Plugin: initializeSocketIO not found in module");
             }
           })
-          .catch((err) => {
+          .catch((err: Error) => {
             console.error("🔌 Socket.IO Plugin: Failed to load module:", err);
           });
       };
 
-      if (server.httpServer.listening) {
+      if (httpServer.listening) {
         console.log("🔌 Socket.IO Plugin: Server already listening");
         initSocket();
       } else {
-        server.httpServer.on('listening', () => {
+        httpServer.on('listening', () => {
           console.log("🔌 Socket.IO Plugin: Server listening event fired");
           initSocket();
         });

@@ -4,12 +4,9 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
-import { Home, Info, Phone, ChevronRight } from "lucide-react";
-import { useState } from "react";
-import { cn } from "~/lib/utils";
+import { Home, Info, Phone } from "lucide-react";
 
 interface MobileMenuProps {
   open: boolean;
@@ -28,8 +25,6 @@ interface MobileMenuProps {
 }
 
 export function MobileMenu({ open, onOpenChange, menus = [], user }: MobileMenuProps) {
-  const [expandedCategories, setExpandedCategories] = useState(false);
-
   const handleLinkClick = () => {
     onOpenChange(false);
   };

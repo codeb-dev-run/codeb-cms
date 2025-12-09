@@ -14,9 +14,9 @@ updates:
       - "dependencies"
       - "npm"
     reviewers:
-      - "your-github-username"
+      - "codeblabdev-max"
     assignees:
-      - "your-github-username"
+      - "codeblabdev-max"
     commit-message:
       prefix: "chore"
       prefix-development: "chore"
@@ -68,7 +68,7 @@ updates:
       - "dependencies"
       - "docker"
     reviewers:
-      - "your-github-username"
+      - "codeblabdev-max"
     commit-message:
       prefix: "chore"
 
@@ -84,6 +84,6 @@ updates:
       - "dependencies"
       - "github-actions"
     reviewers:
-      - "your-github-username"
+      - "codeblabdev-max"
     commit-message:
       prefix: "ci"

@@ -3,8 +3,7 @@
  * /auth/naver/callback - 네이버에서 리다이렉트되는 콜백 URL
  */
 
-import { type LoaderFunction, redirect, json } from '@remix-run/node';
-import { useLoaderData } from '@remix-run/react';
+import { type LoaderFunction, redirect } from '@remix-run/node';
 import { handleNaverCallback } from '~/lib/auth/naver.server';
 import { commitSession, getSession } from '~/lib/session.server';
 
@@ -72,8 +71,6 @@ export const loader: LoaderFunction = async ({ request }) => {
 
 // 에러 페이지 컴포넌트 (옵션)
 export default function NaverCallbackError() {
-  const data = useLoaderData();
-  
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">

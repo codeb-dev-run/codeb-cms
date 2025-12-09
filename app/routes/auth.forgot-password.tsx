@@ -1,5 +1,5 @@
 import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node';
-import { useLoaderData, useSearchParams } from '@remix-run/react';
+import { useLoaderData } from '@remix-run/react';
 import { PasswordResetForm } from '~/components/auth/PasswordResetForm';
 import { createPasswordResetToken, resetPassword } from '~/lib/auth.server';
 import { sendPasswordResetEmail } from '~/lib/email.server';
@@ -40,7 +40,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       
       return json({ success: true });
-    } catch (error) {
+    } catch (_error) {
       return json(
         { error: '요청 처리 중 오류가 발생했습니다' },
         { status: 500 }
@@ -88,8 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function ForgotPasswordPage() {
   const { token } = useLoaderData<typeof loader>();
-  const [searchParams] = useSearchParams();
-  
+
   return (
     <div className="container py-8">
       <PasswordResetForm 

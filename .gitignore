@@ -2,8 +2,10 @@ node_modules
 
 /.cache
 /build
+/public/build
 .env
 .env.local
+.env.production
 
 # Database
 prisma/dev.db
@@ -11,3 +13,14 @@ prisma/dev.db-journal
 
 # Generated files
 /generated
+
+# Temporary files
+*.log
+cookies.txt
+headers.txt
+response_*.html
+response_*.txt
+*.bak
+
+# Plan files
+paln.md

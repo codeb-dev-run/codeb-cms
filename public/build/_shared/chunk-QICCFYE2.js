@@ -1,1 +1,0 @@
-import{a as c}from"/build/_shared/chunk-K4PGTQBQ.js";import{d as u}from"/build/_shared/chunk-T36URGAI.js";var t=u(c(),1);function n(r){let e=t.useRef({value:r,previous:r});return t.useMemo(()=>(e.current.value!==r&&(e.current.previous=e.current.value,e.current.value=r),e.current.previous),[r])}export{n as a};

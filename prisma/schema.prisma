@@ -85,6 +85,8 @@ model Post {
   @@index([authorId])
   @@index([createdAt])
   @@index([publishedAt])
+  @@index([menuId, isPublished]) // 카테고리별 공개 게시글 필터링 최적화
+  @@index([authorId, createdAt]) // 작성자별 최신순 조회 최적화
   @@map("posts")
 }
 
@@ -143,11 +145,12 @@ model Session {
   token     String   @unique
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
-  
+
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   @@index([userId])
   @@index([token])
+  @@index([expiresAt]) // 세션 정리 쿼리 최적화
   @@map("sessions")
 }
 
@@ -269,6 +272,8 @@ model Notification {
   @@index([userId, status])
   @@index([createdAt])
   @@index([type])
+  @@index([expiresAt]) // 만료된 알림 정리 최적화
+  @@index([userId, readAt]) // 미읽은 알림 조회 최적화
   @@map("notifications")
 }
 

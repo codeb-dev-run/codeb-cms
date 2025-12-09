@@ -1,9 +1,7 @@
 import { json, redirect, type ActionFunctionArgs, type LoaderFunctionArgs } from '@remix-run/node';
-import { useLoaderData } from '@remix-run/react';
 import { RegisterForm } from '~/components/auth/RegisterForm';
 import { createUser, createUserSession, getUserByEmail, getUserByUsername, getUserId } from '~/lib/auth.server';
 import { safeRedirect } from '~/lib/utils';
-import { db } from '~/lib/db.server';
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await getUserId(request);
@@ -76,7 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
 
     return createUserSession(user.id, redirectTo, false);
-  } catch (error) {
+  } catch (_error) {
     return json(
       { error: '회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' },
       { status: 500 }
@@ -85,8 +83,6 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function RegisterPage() {
-  const data = useLoaderData<typeof loader>();
-  
   return (
     <div className="container py-8">
       <RegisterForm />

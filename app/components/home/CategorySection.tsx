@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from "@remix-run/react";
 import { ChevronRight, MessageCircle, Eye, Calendar } from "lucide-react";
 
@@ -19,11 +20,10 @@ interface CategorySectionProps {
   color?: string;
 }
 
-export function CategorySection({ 
-  title, 
-  slug, 
-  posts, 
-  color = "blue"
+export const CategorySection = memo(function CategorySection({
+  title,
+  slug,
+  posts,
 }: CategorySectionProps) {
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
@@ -88,7 +88,7 @@ export function CategorySection({
       </div>
     </div>
   );
-}
+});
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);

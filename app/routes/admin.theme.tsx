@@ -294,7 +294,7 @@ export default function AdminTheme() {
     setCustomFonts(updatedFonts);
     
     // 삭제된 폰트가 현재 선택된 폰트인 경우 기본 폰트로 변경
-    let updatedTheme = { ...localTheme, customFonts: updatedFonts };
+    const updatedTheme = { ...localTheme, customFonts: updatedFonts };
     if (localTheme.fontFamily === `custom-${fontId}`) {
       updatedTheme.fontFamily = "pretendard";
     }

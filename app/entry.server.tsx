@@ -14,6 +14,19 @@ import { renderToPipeableStream } from "react-dom/server";
 
 const ABORT_DELAY = 5_000;
 
+// 프로덕션 모니터링 시스템 초기화
+if (process.env.NODE_ENV === "production") {
+  import("./lib/production/monitoring-system.server").then(({ getMonitoringSystem }) => {
+    const monitoring = getMonitoringSystem();
+    if (!monitoring.getIsStarted()) {
+      monitoring.start();
+      console.log("📊 Production monitoring system initialized");
+    }
+  }).catch((err) => {
+    console.error("Failed to initialize monitoring system:", err);
+  });
+}
+
 export default function handleRequest(
   request: Request,
   responseStatusCode: number,

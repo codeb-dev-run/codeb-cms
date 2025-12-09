@@ -118,7 +118,7 @@ export function AdminSidebar() {
                 )}
               >
                 <Icon className="h-5 w-5 lg:h-4 lg:w-4 flex-shrink-0" />
-                {(!collapsed || !collapsed) && (
+                {!collapsed && (
                   <span className={cn(collapsed && "lg:hidden")}>
                     {item.title}
                   </span>

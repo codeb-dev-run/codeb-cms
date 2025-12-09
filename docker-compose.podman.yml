@@ -70,26 +70,33 @@ services:
       timeout: 3s
       retries: 3
 
-  # 백업 서비스 (선택사항)
+  # 백업 서비스 (자동 일일 백업)
   backup:
     image: docker.io/library/postgres:15-alpine
-    restart: "no"
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-vsvs_cms}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      BACKUP_SCHEDULE: "0 3 * * *"  # 매일 새벽 3시
+      POSTGRES_HOST: postgres
       BACKUP_RETENTION_DAYS: "7"
     volumes:
       - backup_data:/backups
+      - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
     entrypoint: >
       sh -c "
-        echo 'Setting up backup cron job...'
-        echo '${BACKUP_SCHEDULE} /usr/local/bin/backup.sh' | crontab -
-        crond -f
+        chmod +x /usr/local/bin/backup.sh &&
+        echo '0 3 * * * /usr/local/bin/backup.sh scheduled >> /var/log/backup.log 2>&1' > /etc/crontabs/root &&
+        echo 'Backup cron job configured for 3:00 AM daily' &&
+        crond -f -l 2
       "
     depends_on:
       - postgres
+    healthcheck:
+      test: ["CMD", "pgrep", "crond"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
 
 volumes:
   app_uploads:

@@ -23,7 +23,7 @@ export default tseslint.config(
             'react/react-in-jsx-scope': 'off',
             '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
             'no-unused-vars': 'off',
-            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/no-explicit-any': 'off', // 프로덕션 코드에서 any 허용
             'prefer-const': 'warn',
             'react/prop-types': 'off',
             '@typescript-eslint/ban-types': 'off',

@@ -46,13 +46,13 @@ interface HealthCheckResult {
   };
 }
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: LoaderFunction = async () => {
   const startTime = Date.now();
   
   try {
     // 데이터베이스 상태 확인
     const dbStartTime = Date.now();
-    let databaseStatus: any = { status: 'down' };
+    let databaseStatus: { status: 'up' | 'down'; responseTime?: number; connections?: { active: number; max: number } } = { status: 'down' };
     
     try {
       await prisma.$queryRaw`SELECT 1`;
@@ -70,7 +70,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 
     // Redis 상태 확인
     const redisStartTime = Date.now();
-    let redisStatus: any = { status: 'down' };
+    let redisStatus: { status: 'up' | 'down'; responseTime?: number } = { status: 'down' };
     
     try {
       const isRedisHealthy = await checkRedisHealth();
@@ -84,7 +84,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     }
 
     // 파일시스템 상태 확인
-    let filesystemStatus = {
+    const filesystemStatus = {
       status: 'up' as const,
       uploadDirectory: true,
       logDirectory: true
@@ -118,7 +118,6 @@ export const loader: LoaderFunction = async ({ request }) => {
     const cpuUsage = process.cpuUsage();
     
     // 메모리 사용률 계산 (RSS 기준)
-    const totalMemory = memoryUsage.rss + memoryUsage.external;
     const memoryPercentage = (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100;
 
     // CPU 사용률 (간단한 근사치)
@@ -132,15 +131,15 @@ export const loader: LoaderFunction = async ({ request }) => {
 
     try {
       // 24시간 내 요청 통계 (실제 구현 시 로그 분석 또는 메트릭 저장소에서 조회)
-      const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      
+      // const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
       // 예시: 로그 테이블이 있다면
       // const requestStats = await prisma.requestLog.aggregate({
       //   where: { createdAt: { gte: last24Hours } },
       //   _count: { id: true },
       //   _sum: { errors: true }
       // });
-      
+
       requestMetrics = {
         total: Math.floor(Math.random() * 10000), // 임시 값
         errorsLast24h: Math.floor(Math.random() * 50) // 임시 값
