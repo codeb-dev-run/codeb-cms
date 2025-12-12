@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "dotenv -e .env -- vite dev",
     "build": "remix build",
-    "start": "remix-serve ./build/server/index.js",
+    "start": "remix-serve ./build/index.js",
     "seed": "tsx prisma/seed.ts",
     "setup": "chmod +x scripts/init-dev.sh && ./scripts/init-dev.sh",
     "test": "vitest",
