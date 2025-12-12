@@ -28,7 +28,7 @@ interface UserData {
   name: string | null;
   role: 'USER' | 'ADMIN';
   isActive: boolean;
-  createdAt: Date;
+  createdAt: string | Date;
   _count: {
     posts: number;
     comments: number;

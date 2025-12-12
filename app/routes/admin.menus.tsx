@@ -44,8 +44,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     orderBy: { name: 'asc' },
   });
 
-  const boards = await db.board.findMany({
-    where: { isActive: true },
+  const boards = await db.boards.findMany({
+    where: { is_active: true },
     orderBy: { order: 'asc' },
     select: {
       id: true,
@@ -84,7 +84,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
       if (urlType === 'board') {
         const boardId = formData.get('boardId') as string;
-        const board = await db.board.findUnique({
+        const board = await db.boards.findUnique({
           where: { id: boardId },
           select: { slug: true },
         });

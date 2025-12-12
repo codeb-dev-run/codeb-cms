@@ -1,5 +1,3 @@
-// 월급루팡 CMS 데이터베이스 스키마
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 메뉴 테이블 (카테고리)
 model Menu {
   id          String   @id @default(cuid())
   name        String
@@ -18,79 +15,75 @@ model Menu {
   icon        String?
   order       Int      @default(0)
   isActive    Boolean  @default(true) @map("is_active")
+  board_id    String?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  
   posts       Post[]
-  
+
   @@map("menus")
 }
 
-// 사용자 테이블
 model User {
-  id                String    @id @default(cuid())
-  username          String    @unique
-  email             String    @unique
-  password          String?  // OAuth 사용자는 비밀번호 없을 수 있음
-  name              String?
-  role              Role      @default(USER)
-  isActive          Boolean   @default(true) @map("is_active")
-  emailVerified     Boolean   @default(false) @map("email_verified")
-  emailVerifiedAt   DateTime? @map("email_verified_at")
-  resetToken        String?   @unique @map("reset_token")
-  resetTokenExpiry  DateTime? @map("reset_token_expiry")
-  lastLoginAt       DateTime? @map("last_login_at")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-  
-  // OAuth 필드
-  provider          String?   // 'kakao', 'naver', 'google', 'local'
-  providerId        String?   @map("provider_id") // OAuth provider의 user ID
-  profileImage      String?   @map("profile_image")
-  
-  posts     Post[]
-  comments  Comment[]
-  sessions  Session[]
-  oauthAccounts OAuthAccount[]
-  notifications Notification[]
+  id                     String                  @id @default(cuid())
+  username               String                  @unique
+  email                  String                  @unique
+  password               String?
+  name                   String?
+  role                   Role                    @default(USER)
+  isActive               Boolean                 @default(true) @map("is_active")
+  emailVerified          Boolean                 @default(false) @map("email_verified")
+  emailVerifiedAt        DateTime?               @map("email_verified_at")
+  resetToken             String?                 @unique @map("reset_token")
+  resetTokenExpiry       DateTime?               @map("reset_token_expiry")
+  lastLoginAt            DateTime?               @map("last_login_at")
+  createdAt              DateTime                @default(now()) @map("created_at")
+  updatedAt              DateTime                @updatedAt @map("updated_at")
+  provider               String?
+  providerId             String?                 @map("provider_id")
+  profileImage           String?                 @map("profile_image")
+  comments               Comment[]
   notificationPreference NotificationPreference?
-  
+  notifications          Notification[]
+  oauthAccounts          OAuthAccount[]
+  posts                  Post[]
+  sessions               Session[]
+
   @@unique([provider, providerId])
   @@map("users")
 }
 
-// 게시글 테이블
 model Post {
-  id          String    @id @default(cuid())
-  menuId      String    @map("menu_id")
-  title       String
-  slug        String    @unique
-  content     String
-  excerpt     String?
-  authorId    String    @map("author_id")
-  views       Int       @default(0)
-  likes       Int       @default(0)
-  isNotice    Boolean   @default(false) @map("is_notice")
-  isPublished Boolean   @default(true) @map("is_published")
-  publishedAt DateTime? @map("published_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  
-  menu        Menu       @relation(fields: [menuId], references: [id])
-  author      User       @relation(fields: [authorId], references: [id])
-  comments    Comment[]
-  postVotes   PostVote[]
+  id           String     @id @default(cuid())
+  board_id     String?
+  menuId       String     @map("menu_id")
+  title        String
+  slug         String     @unique
+  content      String
+  excerpt      String?
+  authorId     String     @map("author_id")
+  views        Int        @default(0)
+  likes        Int        @default(0)
+  isNotice     Boolean    @default(false) @map("is_notice")
+  isPublished  Boolean    @default(true) @map("is_published")
+  publishedAt  DateTime?  @map("published_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  is_vote_post Boolean    @default(false)
+  comments     Comment[]
+  postVotes    PostVote[]
+  author       User       @relation(fields: [authorId], references: [id])
+  boards       boards?    @relation(fields: [board_id], references: [id])
+  menu         Menu       @relation(fields: [menuId], references: [id])
 
   @@index([menuId])
   @@index([authorId])
   @@index([createdAt])
   @@index([publishedAt])
-  @@index([menuId, isPublished]) // 카테고리별 공개 게시글 필터링 최적화
-  @@index([authorId, createdAt]) // 작성자별 최신순 조회 최적화
+  @@index([board_id])
+  @@index([is_vote_post])
   @@map("posts")
 }
 
-// 댓글 테이블
 model Comment {
   id        String   @id @default(cuid())
   postId    String   @map("post_id")
@@ -98,216 +91,163 @@ model Comment {
   content   String
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   author    User     @relation(fields: [authorId], references: [id])
-  
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
   @@index([postId])
   @@index([authorId])
   @@map("comments")
 }
 
-// 블록 테이블
 model Block {
-  id       String   @id @default(cuid())
-  type     String   // 'hero', 'recent-posts', etc
-  name     String
-  location String   // 'home', 'sidebar', etc
-  config   String   @default("{}") // 블록별 설정 (JSON 문자열)
-  order    Int      @default(0)
-  isActive Boolean  @default(true) @map("is_active")
+  id        String   @id @default(cuid())
+  type      String
+  name      String
+  location  String
+  config    String   @default("{}")
+  order     Int      @default(0)
+  isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
   @@unique([location, order])
   @@map("blocks")
 }
 
-// 사이트 설정 테이블
 model Setting {
   id          String   @id @default(cuid())
   key         String   @unique
   value       String
-  type        String   // 'string', 'json', 'number', 'boolean'
-  category    String   // 'general', 'email', 'social', etc
+  type        String
+  category    String
   label       String?
   description String?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  
+
   @@map("settings")
 }
 
-// 세션 테이블
 model Session {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
   token     String   @unique
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
-
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([token])
-  @@index([expiresAt]) // 세션 정리 쿼리 최적화
   @@map("sessions")
 }
 
-// 네비게이션 메뉴 테이블
 model NavigationMenu {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   name      String
-  position  String   // 'header', 'footer', etc
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  
+  position  String
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
   items     MenuItem[]
-  
+
   @@unique([name, position])
   @@map("navigation_menus")
 }
 
-// 메뉴 아이템 테이블
 model MenuItem {
-  id        String   @id @default(cuid())
-  menuId    String   @map("menu_id")
-  parentId  String?  @map("parent_id")
+  id        String         @id @default(cuid())
+  menuId    String         @map("menu_id")
+  parentId  String?        @map("parent_id")
   title     String
   url       String
-  target    String   @default("_self")
-  order     Int      @default(0)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  
+  target    String         @default("_self")
+  order     Int            @default(0)
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
   menu      NavigationMenu @relation(fields: [menuId], references: [id], onDelete: Cascade)
   parent    MenuItem?      @relation("MenuItemChildren", fields: [parentId], references: [id])
   children  MenuItem[]     @relation("MenuItemChildren")
-  
+
   @@index([menuId])
   @@index([parentId])
   @@map("menu_items")
 }
 
-// 역할 enum
-enum Role {
-  ADMIN
-  USER
-}
-
-// 게시글 상태 enum
-enum PostStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
-
-// 페이지 설정 테이블
 model PageConfig {
   id        String   @id @default(cuid())
-  name      String   @unique // 'homepage', 'about', etc
-  config    String   // 블록 설정 배열 (JSON string in SQLite)
+  name      String   @unique
+  config    String
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  
+
   @@map("page_configs")
 }
 
-// 플러그인 데이터 저장
 model PluginData {
   id        String   @id @default(cuid())
   pluginId  String
   key       String
-  value     String   // JSON data stored as string in SQLite
+  value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@unique([pluginId, key], name: "pluginId_key")
   @@map("plugin_data")
 }
 
-// OAuth 계정 연결 테이블
 model OAuthAccount {
-  id                String    @id @default(cuid())
-  userId            String    @map("user_id")
-  provider          String    // 'kakao', 'naver', 'google'
-  providerId        String    @map("provider_id")
-  accessToken       String?   @map("access_token")
-  refreshToken      String?   @map("refresh_token")
-  tokenExpiry       DateTime? @map("token_expiry")
-  scope             String?
-  profileData       String?   @map("profile_data") // 전체 프로필 정보 저장 (JSON string)
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-  
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  provider     String
+  providerId   String    @map("provider_id")
+  accessToken  String?   @map("access_token")
+  refreshToken String?   @map("refresh_token")
+  tokenExpiry  DateTime? @map("token_expiry")
+  scope        String?
+  profileData  String?   @map("profile_data")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerId])
   @@index([userId])
   @@map("oauth_accounts")
 }
 
-// 알림 모델
 model Notification {
-  id                String    @id @default(uuid())
-  userId            String    @map("user_id")
-  type              String
-  priority          String
-  channels          String   // Comma-separated list for SQLite
-  status            String
-  data              String   // JSON data stored as string in SQLite
-  
-  createdAt         DateTime  @default(now()) @map("created_at")
-  sentAt            DateTime? @map("sent_at")
-  deliveredAt       DateTime? @map("delivered_at")
-  readAt            DateTime? @map("read_at")
-  expiresAt         DateTime? @map("expires_at")
-  
-  retryCount        Int?      @map("retry_count")
-  lastRetryAt       DateTime? @map("last_retry_at")
-  error             String?
-  
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  type        String
+  priority    String
+  channels    String
+  status      String
+  data        String
+  createdAt   DateTime  @default(now()) @map("created_at")
+  sentAt      DateTime? @map("sent_at")
+  deliveredAt DateTime? @map("delivered_at")
+  readAt      DateTime? @map("read_at")
+  expiresAt   DateTime? @map("expires_at")
+  retryCount  Int?      @map("retry_count")
+  lastRetryAt DateTime? @map("last_retry_at")
+  error       String?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId, status])
   @@index([createdAt])
   @@index([type])
-  @@index([expiresAt]) // 만료된 알림 정리 최적화
-  @@index([userId, readAt]) // 미읽은 알림 조회 최적화
   @@map("notifications")
 }
 
-// 알림 설정 모델
 model NotificationPreference {
-  id                String    @id @default(uuid())
-  userId            String    @unique @map("user_id")
-  data              String   // JSON data stored as string in SQLite      // 설정 데이터 (channels, types, quietHours 등)
-  
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-  
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  data      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("notification_preferences")
 }
 
-// 블록 타입 상수 (참고용)
-// BLOCK_TYPES = {
-//   HERO: 'hero',
-//   RECENT_POSTS: 'recent_posts',
-//   POPULAR_POSTS: 'popular_posts',
-//   CATEGORY_POSTS: 'category_posts',
-//   BANNER: 'banner',
-//   CUSTOM_HTML: 'custom_html'
-// }
-
-// 투표 타입
-enum VoteType {
-  LIKE
-  DISLIKE
-}
-
-// 투표 주제
 model VoteTopic {
   id          String    @id @default(cuid())
   title       String
@@ -317,21 +257,18 @@ model VoteTopic {
   endDate     DateTime? @map("end_date")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
-
   votes       Vote[]
 
   @@map("vote_topics")
 }
 
-// 투표
 model Vote {
-  id        String   @id @default(cuid())
-  topicId   String   @map("topic_id")
-  userId    String?  @map("user_id")
-  voteType  VoteType @map("vote_type")
-  ipAddress String?  @map("ip_address")
-  createdAt DateTime @default(now()) @map("created_at")
-
+  id        String    @id @default(cuid())
+  topicId   String    @map("topic_id")
+  userId    String?   @map("user_id")
+  voteType  VoteType  @map("vote_type")
+  ipAddress String?   @map("ip_address")
+  createdAt DateTime  @default(now()) @map("created_at")
   topic     VoteTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
 
   @@unique([topicId, userId])
@@ -341,7 +278,6 @@ model Vote {
   @@map("votes")
 }
 
-// 게시글 투표
 model PostVote {
   id        String   @id @default(cuid())
   postId    String   @map("post_id")
@@ -349,7 +285,6 @@ model PostVote {
   voteType  VoteType @map("vote_type")
   ipAddress String?  @map("ip_address")
   createdAt DateTime @default(now()) @map("created_at")
-
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([postId, userId])
@@ -357,4 +292,43 @@ model PostVote {
   @@index([postId])
   @@index([userId])
   @@map("post_votes")
+}
+
+model boards {
+  id                 String   @id
+  name               String
+  slug               String   @unique
+  description        String?
+  board_type         String   @default("general")
+  icon               String?
+  color              String?
+  order              Int      @default(0)
+  is_active          Boolean  @default(true)
+  show_in_main       Boolean  @default(true)
+  posts_per_page     Int      @default(20)
+  read_permission    String   @default("all")
+  write_permission   String   @default("user")
+  comment_permission String   @default("user")
+  use_comment        Boolean  @default(true)
+  use_attachment     Boolean  @default(false)
+  use_notice         Boolean  @default(true)
+  created_at         DateTime @default(now())
+  updated_at         DateTime
+  posts              Post[]
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum VoteType {
+  LIKE
+  DISLIKE
 }

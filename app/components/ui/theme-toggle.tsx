@@ -8,7 +8,7 @@ interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ currentMode = "light" }: ThemeToggleProps) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{ mode?: "light" | "dark" }>();
   const isDark = currentMode === "dark";
 
   // 테마 토글 핸들러

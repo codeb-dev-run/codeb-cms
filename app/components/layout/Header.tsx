@@ -12,10 +12,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Menu, User, LogOut, Shield, PenSquare, Search, Bell } from "lucide-react";
 import { Navigation } from "./Navigation";
 import { ThemeToggle } from "~/components/ui/theme-toggle";
-import type { User as UserType } from "@prisma/client";
-
 interface HeaderProps {
-  user?: Pick<UserType, 'id' | 'email' | 'name' | 'username' | 'role'> | null;
+  user?: {
+    id: string;
+    email: string;
+    name?: string | null;
+    username?: string | null;
+    role?: string;
+  } | null;
   menus?: {
     id: string;
     name: string;

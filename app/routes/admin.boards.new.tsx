@@ -60,7 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // 슬러그 중복 확인
-  const existingBoard = await db.board.findUnique({
+  const existingBoard = await db.boards.findUnique({
     where: { slug }
   });
 
@@ -70,22 +70,24 @@ export async function action({ request }: ActionFunctionArgs) {
 
   try {
     // 게시판 생성
-    const board = await db.board.create({
+    const board = await db.boards.create({
       data: {
+        id: crypto.randomUUID(),
         name,
         slug,
         description,
-        boardType,
-        showInMain,
-        isActive,
-        useComment,
-        useAttachment,
-        useNotice,
-        readPermission,
-        writePermission,
-        commentPermission,
-        postsPerPage,
-        order: 0
+        board_type: boardType,
+        show_in_main: showInMain,
+        is_active: isActive,
+        use_comment: useComment,
+        use_attachment: useAttachment,
+        use_notice: useNotice,
+        read_permission: readPermission,
+        write_permission: writePermission,
+        comment_permission: commentPermission,
+        posts_per_page: postsPerPage,
+        order: 0,
+        updated_at: new Date()
       }
     });
 
@@ -96,7 +98,7 @@ export async function action({ request }: ActionFunctionArgs) {
         slug,
         description,
         isActive,
-        boardId: board.id,
+        board_id: board.id,
         order: 0
       }
     });

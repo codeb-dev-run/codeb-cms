@@ -93,7 +93,7 @@ export async function verifyLogin(emailOrUsername: string, password: string) {
 
     console.log('User found:', user ? 'yes' : 'no');
     
-    if (!user) {
+    if (!user || !user.password) {
       return null;
     }
 

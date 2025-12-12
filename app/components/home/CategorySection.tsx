@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Link } from "@remix-run/react";
-import { ChevronRight, MessageCircle, Eye, Calendar } from "lucide-react";
+import { Eye } from "lucide-react";
 
 interface CategorySectionProps {
   title: string;
@@ -26,62 +26,46 @@ export const CategorySection = memo(function CategorySection({
   posts,
 }: CategorySectionProps) {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-      {/* 헤더 - 심플하게 */}
-      <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-        <h2 className="font-bold text-gray-900 dark:text-gray-100 text-lg">{title}</h2>
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm overflow-hidden">
+      {/* 헤더 */}
+      <div className="h-10 px-3 bg-gray-50 dark:bg-gray-800 flex items-center justify-between">
         <Link
           to={`/${slug}`}
-          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 flex items-center gap-1 text-sm font-medium transition-colors"
+          className="font-bold text-gray-900 dark:text-gray-100 text-base hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
         >
-          더보기
-          <ChevronRight className="h-4 w-4" />
+          {title}
+        </Link>
+        <Link
+          to={`/${slug}`}
+          className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-xs transition-colors"
+        >
+          전체보기
         </Link>
       </div>
 
       {/* 게시물 목록 */}
       <div className="divide-y divide-gray-100 dark:divide-gray-800">
         {posts.length > 0 ? (
-          posts.map((post, index) => (
+          posts.slice(0, 4).map((post) => (
             <Link
               key={post.id}
               to={`/${slug}/${post.slug}`}
-              className="block hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center gap-2 px-3 py-1 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
             >
-              <div className="p-4">
-                <div className="flex gap-3 items-start">
-                  {/* 내용 */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1 line-clamp-2 text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                      {post.title}
-                    </h3>
-
-                    <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDate(post.publishedAt)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Eye className="h-3 w-3" />
-                        {post.viewCount.toLocaleString()}
-                      </span>
-                      {post.commentCount !== undefined && post.commentCount > 0 && (
-                        <span className="flex items-center gap-1">
-                          <MessageCircle className="h-3 w-3" />
-                          {post.commentCount}
-                        </span>
-                      )}
-                      <span className="ml-auto text-gray-600 dark:text-gray-300 font-medium">
-                        {post.author.name}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <span className="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                {post.title}
+              </span>
+              <span className="flex-shrink-0 flex items-center gap-0.5 text-xs text-gray-400 dark:text-gray-500">
+                <Eye className="w-3 h-3" />
+                {post.viewCount}
+              </span>
+              <span className="flex-shrink-0 text-xs text-gray-400 dark:text-gray-500">
+                {formatDate(post.publishedAt)}
+              </span>
             </Link>
           ))
         ) : (
-          <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+          <div className="py-2 px-3 text-center text-gray-500 dark:text-gray-400 text-xs">
             아직 게시물이 없습니다
           </div>
         )}

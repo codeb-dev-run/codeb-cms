@@ -9,6 +9,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   CONTAINER_NAME: codeb-cms-app
+  APP_PORT: 3202
 
 jobs:
   build:
@@ -31,12 +32,7 @@ jobs:
         run: npm ci
 
       - name: Run Lint
-        run: npm run lint || true  # Allow warnings, fail on errors only
-
-      # Unit tests are skipped for now as per user request to focus on deployment flow, 
-      # but can be enabled by uncommenting the lines below.
-      # - name: Run Tests
-      #   run: npm run test:unit
+        run: npm run lint || true
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -75,28 +71,57 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
+            set -e
+
             # Login to GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
 
             # Pull the new image
             podman pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
-            # Navigate to app directory
-            cd /opt/vsvs/app
-
-            # Update .env.production if secret is provided
-            if [ ! -z "${{ secrets.ENV_PRODUCTION }}" ]; then
-              echo "${{ secrets.ENV_PRODUCTION }}" > .env.production
-            fi
-
             # Stop and remove existing container
-            podman stop ${{ env.CONTAINER_NAME }} || true
-            podman rm ${{ env.CONTAINER_NAME }} || true
+            podman stop ${{ env.CONTAINER_NAME }} 2>/dev/null || true
+            podman rm ${{ env.CONTAINER_NAME }} 2>/dev/null || true
 
-            # Download latest deployment script
-            curl -o deploy-podman-run.sh https://raw.githubusercontent.com/codeblabdev-max/codeb-cms/main/deploy-podman-run.sh
-            chmod +x deploy-podman-run.sh
+            # Ensure shared network exists
+            podman network exists codeb-shared || podman network create codeb-shared
 
-            # Run deployment script
-            export APP_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
-            ./deploy-podman-run.sh
+            # Connect existing infrastructure to shared network if needed
+            podman network connect codeb-shared project_cms_postgres 2>/dev/null || true
+            podman network connect codeb-shared project_cms_redis 2>/dev/null || true
+
+            # Run app container with shared infrastructure
+            podman run -d \
+              --name ${{ env.CONTAINER_NAME }} \
+              --network codeb-shared \
+              -p ${{ env.APP_PORT }}:3000 \
+              -e NODE_ENV=production \
+              -e DATABASE_URL="postgresql://codeb_cms_user:codeb_cms_prod_2024!@project_cms_postgres:5432/codeb_cms?schema=public" \
+              -e REDIS_URL="redis://project_cms_redis:6379" \
+              -e SESSION_SECRET="${{ secrets.SESSION_SECRET }}" \
+              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+              -e ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}" \
+              -e KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}" \
+              -e KAKAO_CLIENT_SECRET="${{ secrets.KAKAO_CLIENT_SECRET }}" \
+              -e NAVER_CLIENT_ID="${{ secrets.NAVER_CLIENT_ID }}" \
+              -e NAVER_CLIENT_SECRET="${{ secrets.NAVER_CLIENT_SECRET }}" \
+              -v codeb-cms-uploads:/app/uploads \
+              -v codeb-cms-logs:/app/logs \
+              --health-cmd="curl -f http://localhost:3000/api/health || exit 1" \
+              --health-interval=30s \
+              --health-timeout=10s \
+              --health-retries=3 \
+              --health-start-period=60s \
+              --restart=unless-stopped \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+            # Wait for health check
+            echo "Waiting for application to start..."
+            sleep 20
+
+            # Verify deployment
+            echo "Container Status:"
+            podman ps --filter name=${{ env.CONTAINER_NAME }} --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+            # Health check
+            curl -sf http://localhost:${{ env.APP_PORT }}/api/health && echo " - Health OK" || echo " - Health check pending..."

@@ -8,7 +8,7 @@ interface AdminLayoutProps {
   user: {
     id: string;
     email: string;
-    name: string;
+    name?: string | null;
   };
 }
 

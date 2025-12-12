@@ -3,7 +3,7 @@ import { useFetcher } from "@remix-run/react";
 import type { ThemeConfig } from "~/lib/theme.server";
 
 export function useTheme(initialTheme?: ThemeConfig) {
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<{ theme?: ThemeConfig }>();
   const [theme, setTheme] = useState<ThemeConfig | undefined>(initialTheme);
 
   useEffect(() => {

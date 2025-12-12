@@ -1,11 +1,14 @@
 import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, Link } from "@remix-run/react";
 import { db } from "~/lib/db.server";
 import { getUser } from "~/lib/auth.server";
 import { CategorySection } from "~/components/home/CategorySection";
-import { Sidebar } from "~/components/layout/Sidebar";
 import { VoteBox } from "~/components/home/VoteBox";
+import { MemberRanking } from "~/components/home/MemberRanking";
+import { PopularPosts } from "~/components/home/PopularPosts";
+import { RecentComments } from "~/components/home/RecentComments";
+import { User, LogIn } from "lucide-react";
 
 export const meta: MetaFunction = () => {
   return [
@@ -16,7 +19,7 @@ export const meta: MetaFunction = () => {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await getUser(request);
-  
+
   // Menu 테이블에서 메인 페이지에 표시할 카테고리 가져오기
   const menus = await db.menu.findMany({
     where: {
@@ -26,64 +29,139 @@ export async function loader({ request }: LoaderFunctionArgs) {
     take: 8,
   });
 
-  // 카테고리별 최신 게시물 가져오기
-  const categoryPosts = await Promise.all(
-    menus.map(async (menu) => {
-      const posts = await db.post.findMany({
-        where: {
-          menuId: menu.id,
-          isPublished: true,
-          publishedAt: {
-            lte: new Date(),
-          },
-        },
+  // N+1 최적화: 모든 메뉴의 게시물을 한 번에 가져옴
+  const menuIds = menus.map(m => m.id);
+  const allPosts = await db.post.findMany({
+    where: {
+      menuId: { in: menuIds },
+      isPublished: true,
+      publishedAt: { lte: new Date() },
+    },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      excerpt: true,
+      publishedAt: true,
+      views: true,
+      menuId: true,
+      author: {
         select: {
-          id: true,
-          title: true,
-          slug: true,
-          excerpt: true,
-          publishedAt: true,
-          views: true,
-          author: {
-            select: {
-              name: true,
-              email: true,
-            },
-          },
-          _count: {
-            select: {
-              comments: true,
-            },
-          },
+          name: true,
+          email: true,
         },
-        orderBy: { publishedAt: "desc" },
-        take: 6,
-      });
-
-      return {
-        category: {
-          id: menu.id,
-          name: menu.name,
-          slug: menu.slug,
-          order: menu.order
+      },
+      _count: {
+        select: {
+          comments: true,
         },
-        posts: posts.map((post) => ({
-          id: post.id,
-          title: post.title,
-          slug: post.slug,
-          excerpt: post.excerpt,
-          publishedAt: post.publishedAt?.toISOString(),
-          viewCount: post.views,
-          commentCount: post._count.comments,
-          author: {
-            name: post.author.name || post.author.email,
-          },
-        })),
-      };
-    })
-  );
+      },
+    },
+    orderBy: { publishedAt: "desc" },
+  });
 
-  // 인기 게시물 (조회수 기준)
+  // 메뉴별로 게시물 그룹핑 (각 메뉴당 최대 6개)
+  const postsByMenu = new Map<string, typeof allPosts>();
+  for (const post of allPosts) {
+    const menuPosts = postsByMenu.get(post.menuId) || [];
+    if (menuPosts.length < 6) {
+      menuPosts.push(post);
+      postsByMenu.set(post.menuId, menuPosts);
+    }
+  }
+
+  // 카테고리별 게시물 매핑
+  const categoryPosts = menus.map((menu) => {
+    const posts = postsByMenu.get(menu.id) || [];
+    return {
+      category: {
+        id: menu.id,
+        name: menu.name,
+        slug: menu.slug,
+        order: menu.order
+      },
+      posts: posts.map((post) => ({
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        excerpt: post.excerpt || "",
+        publishedAt: post.publishedAt?.toISOString() ?? new Date().toISOString(),
+        viewCount: post.views,
+        commentCount: post._count.comments,
+        author: {
+          name: post.author.name || post.author.email,
+        },
+      })),
+    };
+  });
+
+  // 인기 게시물 (조회수 기준) - 기간별
+  const now = new Date();
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  const popularPostSelect = {
+    id: true,
+    title: true,
+    slug: true,
+    views: true,
+    menu: {
+      select: {
+        slug: true,
+        name: true,
+      },
+    },
+    _count: {
+      select: {
+        comments: true,
+      },
+    },
+  };
+
+  // 오늘 인기 (24시간)
+  const dailyPopularPosts = await db.post.findMany({
+    where: {
+      isPublished: true,
+      publishedAt: {
+        gte: oneDayAgo,
+        lte: now,
+      },
+    },
+    select: popularPostSelect,
+    orderBy: { views: "desc" },
+    take: 5,
+  });
+
+  // 주간 인기
+  const weeklyPopularPosts = await db.post.findMany({
+    where: {
+      isPublished: true,
+      publishedAt: {
+        gte: oneWeekAgo,
+        lte: now,
+      },
+    },
+    select: popularPostSelect,
+    orderBy: { views: "desc" },
+    take: 5,
+  });
+
+  // 월간 인기
+  const monthlyPopularPosts = await db.post.findMany({
+    where: {
+      isPublished: true,
+      publishedAt: {
+        gte: oneMonthAgo,
+        lte: now,
+      },
+    },
+    select: popularPostSelect,
+    orderBy: { views: "desc" },
+    take: 5,
+  });
+
+  // 전체 인기 게시물 (기존)
   const popularPosts = await db.post.findMany({
     where: {
       isPublished: true,
@@ -130,8 +208,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     take: 10,
   });
 
-  // 오늘의 투표 주제 가져오기
-  const todayVoteTopic = await db.voteTopic.findFirst({
+  // 오늘의 투표 주제 가져오기 (2개)
+  const todayVoteTopics = await db.voteTopic.findMany({
     where: {
       isActive: true,
       startDate: {
@@ -142,30 +220,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
         { endDate: { gte: new Date() } }
       ]
     },
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
+    take: 2
   });
 
-  // 투표 통계
-  let voteStats = null;
-  if (todayVoteTopic) {
-    const [likeCount, dislikeCount] = await Promise.all([
-      db.vote.count({
-        where: { topicId: todayVoteTopic.id, voteType: "LIKE" }
-      }),
-      db.vote.count({
-        where: { topicId: todayVoteTopic.id, voteType: "DISLIKE" }
-      })
-    ]);
+  // 투표 통계 (복수)
+  const voteStatsArray = await Promise.all(
+    todayVoteTopics.map(async (topic) => {
+      const [likeCount, dislikeCount] = await Promise.all([
+        db.vote.count({
+          where: { topicId: topic.id, voteType: "LIKE" }
+        }),
+        db.vote.count({
+          where: { topicId: topic.id, voteType: "DISLIKE" }
+        })
+      ]);
 
-    voteStats = {
-      topicId: todayVoteTopic.id,
-      title: todayVoteTopic.title,
-      description: todayVoteTopic.description,
-      likeCount,
-      dislikeCount,
-      userVote: null // 로더에서는 IP를 정확히 알 수 없으므로 클라이언트에서 처리
-    };
-  }
+      return {
+        topicId: topic.id,
+        title: topic.title,
+        description: topic.description,
+        likeCount,
+        dislikeCount,
+        userVote: null
+      };
+    })
+  );
 
   // 최근 댓글
   const recentComments = await db.comment.findMany({
@@ -195,10 +275,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
     take: 10,
   });
 
+  // 인기 게시물 매핑 함수
+  const mapPopularPost = (post: typeof dailyPopularPosts[0]) => ({
+    id: post.id,
+    title: post.title,
+    slug: post.slug,
+    viewCount: post.views,
+    commentCount: post._count.comments,
+    category: post.menu ? { slug: post.menu.slug, name: post.menu.name } : undefined,
+  });
+
   return json({
     user,
-    voteStats,
+    voteStatsArray,
     categoryPosts,
+    dailyPopularPosts: dailyPopularPosts.map(mapPopularPost),
+    weeklyPopularPosts: weeklyPopularPosts.map(mapPopularPost),
+    monthlyPopularPosts: monthlyPopularPosts.map(mapPopularPost),
     popularPosts: popularPosts.map((post) => ({
       id: post.id,
       title: post.title,
@@ -231,79 +324,108 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Index() {
-  const { user, voteStats, categoryPosts, popularPosts, memberRankings, recentComments } = useLoaderData<typeof loader>();
+  const {
+    user,
+    voteStatsArray,
+    categoryPosts,
+    dailyPopularPosts,
+    weeklyPopularPosts,
+    monthlyPopularPosts,
+    memberRankings,
+    recentComments
+  } = useLoaderData<typeof loader>();
 
-  const categoryColors = [
-    "blue", "green", "purple", "orange", "red", "yellow", "gray", "blue"
-  ];
+  // 첫 번째 투표 주제 사용
+  const voteStats = voteStatsArray && voteStatsArray.length > 0 ? voteStatsArray[0] : null;
+
+  // 게시판이 없는 경우
+  if (categoryPosts.length === 0) {
+    return (
+      <div className="bg-gray-50 dark:bg-gray-950 min-h-full">
+        <div className="max-w-7xl mx-auto px-4 py-16">
+          <div className="text-center">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              아직 게시판이 없습니다
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              관리자 페이지에서 메뉴와 게시판을 생성해 주세요
+            </p>
+            {user?.role === "ADMIN" && (
+              <Link
+                to="/admin/menus"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                메뉴 관리로 이동
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-950">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6" style={{ maxWidth: '1450px' }}>
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-          {/* 메인 콘텐츠 영역 - 왼쪽 */}
-          <main className="order-1">
-            {/* 오늘의 투표 - 호불호 박스 */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">오늘의 투표</h2>
-                {/* 어드민 사용자에게만 관리 패널 링크 표시 */}
-                {user?.role === "ADMIN" && (
-                  <a
-                    href="/admin"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 text-sm font-medium transition-colors"
-                    title="관리자 패널 (새 창)"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    관리 패널
-                  </a>
-                )}
-              </div>
-              {voteStats ? (
-                <VoteBox
-                  topicId={voteStats.topicId}
-                  title={voteStats.title}
-                  description={voteStats.description}
-                  initialLikeCount={voteStats.likeCount}
-                  initialDislikeCount={voteStats.dislikeCount}
-                  initialUserVote={voteStats.userVote}
-                />
-              ) : (
-                <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 p-8 text-center">
-                  <p className="text-gray-500 dark:text-gray-400">현재 진행 중인 투표가 없습니다</p>
-                </div>
-              )}
+    <div className="bg-gray-50 dark:bg-gray-950 min-h-full">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* 상단 유저 정보 */}
+        <div className="flex justify-end mb-6">
+          {user ? (
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <User className="w-4 h-4" />
+              <span>{user.name || user.username}</span>
             </div>
+          ) : (
+            <Link
+              to="/auth/login"
+              className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>로그인</span>
+            </Link>
+          )}
+        </div>
 
-            {/* 카테고리별 섹션 - 2개씩 그리드 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {categoryPosts.map((section, index) => (
-                <CategorySection
-                  key={section.category.id}
-                  title={section.category.name}
-                  slug={section.category.slug}
-                  posts={section.posts}
-                  color={categoryColors[index % categoryColors.length]}
-                />
-              ))}
-            </div>
-          </main>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* 메인 콘텐츠 영역 */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* 투표 박스 */}
+            {voteStats && (
+              <VoteBox
+                topicId={voteStats.topicId}
+                title={voteStats.title}
+                {...(voteStats.description ? { description: voteStats.description } : {})}
+                initialLikeCount={voteStats.likeCount}
+                initialDislikeCount={voteStats.dislikeCount}
+                initialUserVote={voteStats.userVote}
+              />
+            )}
 
-          {/* 오른쪽 사이드바 - 320px 고정 너비 */}
-          <aside className="order-2 lg:w-80">
-            <Sidebar
-              popularPosts={popularPosts}
-              memberRankings={memberRankings}
-              recentComments={recentComments}
-              position="right"
-              user={user}
+            {/* 카테고리별 게시물 */}
+            {categoryPosts.map((item) => (
+              <CategorySection
+                key={item.category.id}
+                title={item.category.name}
+                slug={item.category.slug}
+                posts={item.posts}
+              />
+            ))}
+          </div>
+
+          {/* 사이드바 */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* 인기 게시물 */}
+            <PopularPosts
+              dailyPosts={dailyPopularPosts}
+              weeklyPosts={weeklyPopularPosts}
+              monthlyPosts={monthlyPopularPosts}
             />
-          </aside>
+
+            {/* 회원 랭킹 */}
+            <MemberRanking rankings={memberRankings} />
+
+            {/* 최근 댓글 */}
+            <RecentComments comments={recentComments} />
+          </div>
         </div>
       </div>
     </div>

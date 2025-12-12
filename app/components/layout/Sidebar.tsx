@@ -1,10 +1,10 @@
 import { Link, Form, useNavigation } from "@remix-run/react";
-import { TrendingUp, MessageCircle, Users, Clock, Eye, User } from "lucide-react";
+import { TrendingUp, Eye, User } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 
-interface SidebarProps {
+export interface SidebarProps {
   popularPosts?: {
     id: string;
     title: string;
@@ -14,29 +14,8 @@ interface SidebarProps {
       slug: string;
     };
   }[];
-  memberRankings?: {
-    id: string;
-    name: string;
-    username: string;
-    postCount: number;
-    rank: number;
-  }[];
-  recentComments?: {
-    id: string;
-    content: string;
-    author: {
-      name: string;
-      username: string;
-    };
-    post: {
-      title: string;
-      slug: string;
-      category?: {
-        slug: string;
-      };
-    };
-    createdAt: string;
-  }[];
+  memberRankings?: any[];
+  recentComments?: any[];
   position?: "left" | "right";
   user?: {
     id: string;
@@ -45,7 +24,7 @@ interface SidebarProps {
   } | null;
 }
 
-export function Sidebar({ popularPosts = [], memberRankings = [], recentComments = [], position = "right", user }: SidebarProps) {
+export function Sidebar({ popularPosts = [], position = "right", user }: SidebarProps) {
   const navigation = useNavigation();
   return (
     <aside className={cn(
@@ -93,8 +72,8 @@ export function Sidebar({ popularPosts = [], memberRankings = [], recentComments
                 로그인 상태 유지
               </label>
             </div>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full"
               disabled={navigation.state === "submitting"}
             >
@@ -196,9 +175,9 @@ export function Sidebar({ popularPosts = [], memberRankings = [], recentComments
               </Link>
             </div>
             <Form method="post" action="/auth/logout">
-              <Button 
-                type="submit" 
-                variant="outline" 
+              <Button
+                type="submit"
+                variant="outline"
                 className="w-full"
               >
                 로그아웃
@@ -228,8 +207,8 @@ export function Sidebar({ popularPosts = [], memberRankings = [], recentComments
                   <span className={cn(
                     "flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white",
                     index === 0 ? "bg-red-500" :
-                    index === 1 ? "bg-orange-500" :
-                    index === 2 ? "bg-yellow-500" : "bg-gray-400"
+                      index === 1 ? "bg-orange-500" :
+                        index === 2 ? "bg-yellow-500" : "bg-gray-400"
                   )}>
                     {index + 1}
                   </span>
@@ -253,86 +232,19 @@ export function Sidebar({ popularPosts = [], memberRankings = [], recentComments
         </div>
       </div>
 
-      {/* 회원 랭킹 */}
+      {/* 회원 랭킹 - 숨김 (요청사항: 로그인/인기게시물만 표시) */}
+      {/* 
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-        <div className="px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-700 dark:to-purple-800">
-          <h3 className="font-semibold text-white flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            회원 랭킹
-          </h3>
-        </div>
-        <div className="divide-y divide-gray-100 dark:divide-gray-800">
-          {memberRankings.length > 0 ? (
-            memberRankings.map((member) => (
-              <div key={member.id} className="px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className={cn(
-                    "flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
-                    member.rank === 1 ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300" :
-                    member.rank === 2 ? "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300" :
-                    member.rank === 3 ? "bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300" :
-                    "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
-                  )}>
-                    {member.rank}
-                  </span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {member.name || member.username}
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  게시글 {member.postCount}
-                </span>
-              </div>
-            ))
-          ) : (
-            <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-              회원 정보가 없습니다
-            </div>
-          )}
-        </div>
+        ...
       </div>
+      */}
 
-      {/* 최근 댓글 */}
+      {/* 최근 댓글 - 숨김 (요청사항: 로그인/인기게시물만 표시) */}
+      {/* 
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
-        <div className="px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 dark:from-green-700 dark:to-green-800">
-          <h3 className="font-semibold text-white flex items-center gap-2">
-            <MessageCircle className="h-4 w-4" />
-            최근 댓글
-          </h3>
-        </div>
-        <div className="divide-y divide-gray-100 dark:divide-gray-800">
-          {recentComments.length > 0 ? (
-            recentComments.map((comment) => (
-              <Link
-                key={comment.id}
-                to={comment.post.category ? `/${comment.post.category.slug}/${comment.post.slug}` : `/post/${comment.post.slug}`}
-                className="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                    {comment.post.title}
-                  </p>
-                  <p className="text-sm text-gray-900 dark:text-gray-100 line-clamp-2">
-                    {comment.content}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                    <span className="font-medium">{comment.author.name || comment.author.username}</span>
-                    <span>·</span>
-                    <Clock className="h-3 w-3" />
-                    <span>{formatRelativeTime(comment.createdAt)}</span>
-                  </div>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-              아직 댓글이 없습니다
-            </div>
-          )}
-        </div>
+        ...
       </div>
+      */}
     </aside>
   );
 }
@@ -346,6 +258,6 @@ function formatRelativeTime(dateString: string): string {
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
   if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}일 전`;
-  
+
   return date.toLocaleDateString();
 }

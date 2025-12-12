@@ -28,7 +28,7 @@ function createTransporter() {
     return null;
   }
 
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: env.EMAIL_SMTP_HOST,
     port: env.EMAIL_SMTP_PORT || 587,
     secure: env.EMAIL_SMTP_PORT === 465,

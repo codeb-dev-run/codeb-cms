@@ -31,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   // 모든 게시판 가져오기
-  const boards = await db.board.findMany({
+  const boards = await db.boards.findMany({
     orderBy: { order: "asc" },
     include: {
       _count: {
@@ -61,43 +61,43 @@ export async function action({ request }: ActionFunctionArgs) {
   const boardId = formData.get("boardId") as string;
 
   if (action === "delete" && boardId) {
-    await db.board.delete({
+    await db.boards.delete({
       where: { id: boardId }
     });
     return json({ success: true });
   }
 
   if (action === "toggle" && boardId) {
-    const board = await db.board.findUnique({
+    const board = await db.boards.findUnique({
       where: { id: boardId }
     });
 
     if (board) {
-      await db.board.update({
+      await db.boards.update({
         where: { id: boardId },
-        data: { isActive: !board.isActive }
+        data: { is_active: !board.is_active }
       });
     }
     return json({ success: true });
   }
 
   if (action === "move-up" && boardId) {
-    const currentBoard = await db.board.findUnique({
+    const currentBoard = await db.boards.findUnique({
       where: { id: boardId }
     });
 
     if (currentBoard) {
-      const previousBoard = await db.board.findFirst({
+      const previousBoard = await db.boards.findFirst({
         where: { order: { lt: currentBoard.order } },
         orderBy: { order: "desc" }
       });
 
       if (previousBoard) {
-        await db.board.update({
+        await db.boards.update({
           where: { id: currentBoard.id },
           data: { order: previousBoard.order }
         });
-        await db.board.update({
+        await db.boards.update({
           where: { id: previousBoard.id },
           data: { order: currentBoard.order }
         });
@@ -107,22 +107,22 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (action === "move-down" && boardId) {
-    const currentBoard = await db.board.findUnique({
+    const currentBoard = await db.boards.findUnique({
       where: { id: boardId }
     });
 
     if (currentBoard) {
-      const nextBoard = await db.board.findFirst({
+      const nextBoard = await db.boards.findFirst({
         where: { order: { gt: currentBoard.order } },
         orderBy: { order: "asc" }
       });
 
       if (nextBoard) {
-        await db.board.update({
+        await db.boards.update({
           where: { id: currentBoard.id },
           data: { order: nextBoard.order }
         });
-        await db.board.update({
+        await db.boards.update({
           where: { id: nextBoard.id },
           data: { order: currentBoard.order }
         });
@@ -250,7 +250,7 @@ export default function AdminBoards() {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
-                      {getBoardTypeIcon(board.boardType)}
+                      {getBoardTypeIcon(board.board_type)}
                     </div>
                     <div className="ml-3">
                       <div className="text-sm font-medium text-gray-900">
@@ -264,14 +264,14 @@ export default function AdminBoards() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                    {getBoardTypeName(board.boardType)}
+                    {getBoardTypeName(board.board_type)}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {board._count.posts}개
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {board.showInMain ? (
+                  {board.show_in_main ? (
                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                       노출
                     </span>
@@ -282,7 +282,7 @@ export default function AdminBoards() {
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {board.isActive ? (
+                  {board.is_active ? (
                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                       활성
                     </span>
@@ -294,8 +294,8 @@ export default function AdminBoards() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <div className="text-xs">
-                    <div>읽기: {board.readPermission}</div>
-                    <div>쓰기: {board.writePermission}</div>
+                    <div>읽기: {board.read_permission}</div>
+                    <div>쓰기: {board.write_permission}</div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -309,7 +309,7 @@ export default function AdminBoards() {
                       <input type="hidden" name="_action" value="toggle" />
                       <input type="hidden" name="boardId" value={board.id} />
                       <Button variant="ghost" size="icon" type="submit">
-                        {board.isActive ? (
+                        {board.is_active ? (
                           <EyeOff className="h-4 w-4" />
                         ) : (
                           <Eye className="h-4 w-4" />
