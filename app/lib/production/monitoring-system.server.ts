@@ -163,7 +163,7 @@ class MonitoringSystem extends EventEmitter {
         
         this.emit('metricsCollected', metrics);
       } catch (error) {
-        this.logError('메트릭 수집 실패', error);
+        this.logError('메트릭 수집 실패', error instanceof Error ? error : undefined);
       }
     }, this.config.metrics.collectInterval);
   }
@@ -415,7 +415,7 @@ class MonitoringSystem extends EventEmitter {
 
       this.logInfo(`알림 전송 완료: ${alert.title}`);
     } catch (error) {
-      this.logError('알림 전송 실패', error);
+      this.logError('알림 전송 실패', error instanceof Error ? error : undefined);
     }
   }
 

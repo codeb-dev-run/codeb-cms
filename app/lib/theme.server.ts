@@ -126,7 +126,7 @@ export function generateCSSVariables(theme: ThemeConfig): string {
     large: { base: "18px", h1: "3rem", h2: "2.5rem", h3: "2rem" }
   };
 
-  const fontFamilies = {
+  const fontFamilies: Record<string, string> = {
     "pretendard": "'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     "noto-sans-kr": "'Noto Sans KR', sans-serif",
     "malgun-gothic": "'Malgun Gothic', '맑은 고딕', sans-serif",

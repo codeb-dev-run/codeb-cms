@@ -240,24 +240,33 @@ export async function checkRedisHealth(): Promise<{
   
   try {
     const cluster = getRedisCluster();
-    
+
     // PING 테스트
     await cluster.ping();
-    
-    // 노드 정보 가져오기
-    const nodes = cluster.nodes('all');
-    const masters = cluster.nodes('master');
-    const slaves = cluster.nodes('slave');
-    
+
+    // 노드 정보 가져오기 (Cluster 모드일 때만)
+    let nodesCount = 1;
+    let mastersCount = 1;
+    let slavesCount = 0;
+
+    if ('nodes' in cluster && typeof cluster.nodes === 'function') {
+      const nodes = (cluster as Cluster).nodes('all');
+      const masters = (cluster as Cluster).nodes('master');
+      const slaves = (cluster as Cluster).nodes('slave');
+      nodesCount = nodes.length;
+      mastersCount = masters.length;
+      slavesCount = slaves.length;
+    }
+
     const responseTime = Date.now() - startTime;
-    
+
     return {
       status: 'healthy',
       details: {
         connected: true,
-        nodesCount: nodes.length,
-        masters: masters.length,
-        slaves: slaves.length,
+        nodesCount,
+        masters: mastersCount,
+        slaves: slavesCount,
         responseTime
       }
     };
@@ -290,35 +299,48 @@ export async function getClusterInfo(): Promise<{
   }>;
 }> {
   const cluster = getRedisCluster();
-  
+
   // 슬롯 정보
   const slots: { [key: string]: string[] } = {};
-  
+
+  // Cluster 모드가 아닌 경우 단일 노드 반환
+  if (!('nodes' in cluster) || typeof cluster.nodes !== 'function') {
+    return {
+      slots,
+      nodes: [{
+        host: (cluster as Redis).options?.host || 'localhost',
+        port: (cluster as Redis).options?.port || 6379,
+        status: 'ready',
+        role: 'master'
+      }]
+    };
+  }
+
   // 노드 정보
-  const allNodes = cluster.nodes('all');
+  const allNodes = (cluster as Cluster).nodes('all');
   const nodes = await Promise.all(
-    allNodes.map(async (node) => {
+    allNodes.map(async (node: Redis) => {
       try {
         const info = await node.info('replication');
         const role = info.includes('role:master') ? 'master' : 'slave';
-        
+
         return {
-          host: node.options.host || 'unknown',
-          port: node.options.port || 0,
+          host: node.options?.host || 'unknown',
+          port: node.options?.port || 0,
           status: node.status || 'unknown',
           role
         };
-      } catch (error) {
+      } catch {
         return {
-          host: node.options.host || 'unknown',
-          port: node.options.port || 0,
+          host: node.options?.host || 'unknown',
+          port: node.options?.port || 0,
           status: 'error',
           role: 'unknown'
         };
       }
     })
   );
-  
+
   return { slots, nodes };
 }
 
@@ -340,48 +362,53 @@ export async function getClusterMetrics(): Promise<{
   };
 }> {
   const cluster = getRedisCluster();
-  const masters = cluster.nodes('master');
-  
+
   let totalOps = 0;
   let instantOps = 0;
   let connectionsReceived = 0;
   let connectionsRejected = 0;
   let memoryUsed = 0;
   let memoryPeak = 0;
-  
-  // 각 마스터 노드에서 메트릭 수집
-  await Promise.all(
-    masters.map(async (node) => {
-      try {
-        const info = await node.info('stats');
-        const memInfo = await node.info('memory');
-        
-        // 연산 통계
-        const opsMatch = info.match(/total_commands_processed:(\d+)/);
-        const instantOpsMatch = info.match(/instantaneous_ops_per_sec:(\d+)/);
-        
-        if (opsMatch) totalOps += parseInt(opsMatch[1]);
-        if (instantOpsMatch) instantOps += parseInt(instantOpsMatch[1]);
-        
-        // 연결 통계
-        const connReceivedMatch = info.match(/total_connections_received:(\d+)/);
-        const connRejectedMatch = info.match(/rejected_connections:(\d+)/);
-        
-        if (connReceivedMatch) connectionsReceived += parseInt(connReceivedMatch[1]);
-        if (connRejectedMatch) connectionsRejected += parseInt(connRejectedMatch[1]);
-        
-        // 메모리 통계
-        const memUsedMatch = memInfo.match(/used_memory:(\d+)/);
-        const memPeakMatch = memInfo.match(/used_memory_peak:(\d+)/);
-        
-        if (memUsedMatch) memoryUsed += parseInt(memUsedMatch[1]);
-        if (memPeakMatch) memoryPeak += parseInt(memPeakMatch[1]);
-      } catch (error) {
-        console.error('Failed to get metrics from node:', error);
-      }
-    })
-  );
-  
+
+  // 메트릭 수집 함수
+  const collectMetrics = async (node: Redis) => {
+    try {
+      const info = await node.info('stats');
+      const memInfo = await node.info('memory');
+
+      // 연산 통계
+      const opsMatch = info.match(/total_commands_processed:(\d+)/);
+      const instantOpsMatch = info.match(/instantaneous_ops_per_sec:(\d+)/);
+
+      if (opsMatch) totalOps += parseInt(opsMatch[1]);
+      if (instantOpsMatch) instantOps += parseInt(instantOpsMatch[1]);
+
+      // 연결 통계
+      const connReceivedMatch = info.match(/total_connections_received:(\d+)/);
+      const connRejectedMatch = info.match(/rejected_connections:(\d+)/);
+
+      if (connReceivedMatch) connectionsReceived += parseInt(connReceivedMatch[1]);
+      if (connRejectedMatch) connectionsRejected += parseInt(connRejectedMatch[1]);
+
+      // 메모리 통계
+      const memUsedMatch = memInfo.match(/used_memory:(\d+)/);
+      const memPeakMatch = memInfo.match(/used_memory_peak:(\d+)/);
+
+      if (memUsedMatch) memoryUsed += parseInt(memUsedMatch[1]);
+      if (memPeakMatch) memoryPeak += parseInt(memPeakMatch[1]);
+    } catch (error) {
+      console.error('Failed to get metrics from node:', error);
+    }
+  };
+
+  // Cluster 모드가 아닌 경우 단일 노드에서 수집
+  if (!('nodes' in cluster) || typeof cluster.nodes !== 'function') {
+    await collectMetrics(cluster as Redis);
+  } else {
+    const masters = (cluster as Cluster).nodes('master');
+    await Promise.all(masters.map(collectMetrics));
+  }
+
   return {
     operations: {
       total: totalOps,

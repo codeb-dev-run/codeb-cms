@@ -16,8 +16,7 @@ export function sanitizeHTML(html: string): string {
       'ul', 'ol', 'li', 'blockquote', 'a', 'img', 'code', 'pre'
     ],
     ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'target'],
-    FORBID_SCRIPT: true,
-    FORBID_TAGS: ['script', 'object', 'embed', 'base', 'link'],
+    FORBID_TAGS: ['script', 'object', 'embed', 'base', 'link', 'style'],
     FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
   });
 }

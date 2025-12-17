@@ -102,11 +102,8 @@ if (USE_REDIS) {
 }
 
 // 메모리 캐시 (L1 캐시) - Redis 없어도 작동
-const memoryCache = new LRUCache<string, any>({
+const memoryCache = new LRUCache({
   max: 10000, // 최대 10,000개 항목
-  ttl: 1000 * 60 * 5, // 5분 TTL
-  allowStale: true,
-  updateAgeOnGet: true,
 });
 
 // 캐시 인터페이스

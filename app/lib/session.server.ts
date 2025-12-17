@@ -299,9 +299,13 @@ export async function migrateDbSessionsToRedis(
         0,
         Math.floor((dbSession.expiresAt.getTime() - Date.now()) / 1000)
       );
-      
+
       if (ttl > 0) {
-        await manager.cache.expire(`session:${sessionId}`, ttl);
+        // TTL을 설정하기 위해 세션을 다시 저장
+        const session = await manager.getSession(sessionId);
+        if (session) {
+          await manager.updateSession(sessionId, { ...session });
+        }
       }
       
       results.migrated++;
@@ -331,8 +335,7 @@ export async function scheduleSessionCleanup(): Promise<void> {
   }, 3600 * 1000); // 1시간마다
 }
 
-// Export 타입들
-export type { SessionData, RedisSessionManager };
+// Export 타입 (인터페이스만 - 클래스는 이미 export됨)
 
 // Compatibility exports for auth
 export const getSession = redisSessionStorage.getSession;

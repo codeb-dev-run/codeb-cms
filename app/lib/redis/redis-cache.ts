@@ -1,18 +1,30 @@
 /**
  * Redis 기반 캐시 구현체
- * CacheInterface를 구현하여 플러그인 시스템과 통합
+ * 플러그인 시스템과 통합 가능한 캐시 인터페이스 제공
  */
 
-import { Cluster } from 'ioredis';
-import { CacheInterface } from '~/core/plugin-system/cache-interface';
+import { Cluster, Redis } from 'ioredis';
 import { getRedisCluster } from './cluster.server';
+
+/**
+ * 캐시 인터페이스 정의
+ */
+export interface CacheInterface {
+  get<T = unknown>(key: string): Promise<T | null>;
+  set(key: string, value: unknown, ttl?: number): Promise<void>;
+  del(key: string): Promise<void>;
+  has(key: string): Promise<boolean>;
+  clear(): Promise<void>;
+  keys(pattern: string): Promise<string[]>;
+  expire(key: string, ttl: number): Promise<void>;
+}
 
 /**
  * Redis 캐시 구현 클래스
  * 10,000+ 동시 사용자를 위한 고성능 캐싱
  */
 export class RedisCache implements CacheInterface {
-  private cluster: Cluster;
+  private cluster: Cluster | Redis;
   private namespace: string;
   private defaultTTL: number = 3600; // 기본 1시간
 
@@ -116,14 +128,35 @@ export class RedisCache implements CacheInterface {
   async keys(pattern: string): Promise<string[]> {
     const fullPattern = this.getKey(pattern);
     const allKeys: string[] = [];
-    
-    // 클러스터의 모든 노드에서 키 검색
-    const nodes = this.cluster.nodes('master');
-    
-    for (const node of nodes) {
+
+    // 클러스터 모드인지 확인
+    if ('nodes' in this.cluster && typeof this.cluster.nodes === 'function') {
+      // 클러스터의 모든 노드에서 키 검색
+      const nodes = (this.cluster as Cluster).nodes('master');
+
+      for (const node of nodes) {
+        try {
+          // SCAN을 사용하여 안전하게 키 검색 (KEYS 명령어는 프로덕션에서 위험)
+          const stream = node.scanStream({
+            match: fullPattern,
+            count: 100
+          });
+
+          await new Promise<void>((resolve, reject) => {
+            stream.on('data', (keys: string[]) => {
+              allKeys.push(...keys);
+            });
+            stream.on('end', resolve);
+            stream.on('error', reject);
+          });
+        } catch (error) {
+          console.error(`Failed to scan keys on node:`, error);
+        }
+      }
+    } else {
+      // 단일 Redis 인스턴스에서 검색
       try {
-        // SCAN을 사용하여 안전하게 키 검색 (KEYS 명령어는 프로덕션에서 위험)
-        const stream = node.scanStream({
+        const stream = (this.cluster as Redis).scanStream({
           match: fullPattern,
           count: 100
         });
@@ -136,7 +169,7 @@ export class RedisCache implements CacheInterface {
           stream.on('error', reject);
         });
       } catch (error) {
-        console.error(`Failed to scan keys on node:`, error);
+        console.error(`Failed to scan keys:`, error);
       }
     }
 
