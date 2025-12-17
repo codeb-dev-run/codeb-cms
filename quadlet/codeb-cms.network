@@ -1,0 +1,14 @@
+# CodeB CMS - Podman Network
+# Quadlet 네트워크 파일
+
+[Network]
+NetworkName=codeb-cms-network
+Driver=bridge
+Subnet=10.90.0.0/24
+Gateway=10.90.0.1
+
+# DNS 설정
+DNS=10.90.0.1
+
+[Install]
+WantedBy=default.target

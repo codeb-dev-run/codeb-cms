@@ -1,75 +1,71 @@
-# Docker 멀티스테이지 빌드
-# 블리CMS Enterprise 프로덕션 배포용
+# ===========================================
+# CodeB CMS - Production Dockerfile
+# Remix + Express + Socket.IO + Prisma
+# ===========================================
 
-# Stage 1: Dependencies
-FROM node:20-alpine AS deps
-RUN apk add --no-cache libc6-compat python3 make g++
+# Stage 1: Base
+FROM node:20-alpine AS base
+RUN apk add --no-cache curl dumb-init
 WORKDIR /app
 
-# 패키지 파일 복사
-COPY package.json package-lock.json* ./
+# Stage 2: Dependencies
+FROM base AS deps
+RUN apk add --no-cache python3 make g++
+
+COPY package*.json ./
 COPY prisma ./prisma/
 
-# 의존성 설치
-RUN npm ci --only=production && \
-    npm install -g prisma && \
-    npx prisma generate
+# 모든 의존성 설치 (devDependencies 포함 - 빌드에 필요)
+RUN npm ci && \
+    npx prisma generate && \
+    npm cache clean --force
 
-# Stage 2: Builder
-FROM node:20-alpine AS builder
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
+# Stage 3: Builder
+FROM deps AS builder
 
-# 의존성 복사
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# 환경 변수 설정
-ENV NODE_ENV production
-ENV REMIX_BUILD_MODE production
+ENV NODE_ENV=production
 
-# Prisma 클라이언트 생성
-RUN npx prisma generate
-
-# 애플리케이션 빌드
+# TypeScript 빌드 & Remix 빌드
 RUN npm run build
 
-# Stage 3: Runner
-FROM node:20-alpine AS runner
-RUN apk add --no-cache libc6-compat curl
+# Production 의존성만 남기기
+RUN npm prune --production && \
+    npx prisma generate
 
-WORKDIR /app
+# Stage 4: Runner
+FROM base AS runner
 
-# 보안을 위한 비루트 사용자 생성
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 remix
+# 보안용 비루트 사용자
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S remix -u 1001 -G nodejs
 
-# 필요한 파일만 복사
-COPY --from=builder /app/build ./build
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/server.js ./server.js
+# 프로덕션 파일 복사
+COPY --from=builder --chown=remix:nodejs /app/build ./build
+COPY --from=builder --chown=remix:nodejs /app/public ./public
+COPY --from=builder --chown=remix:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=remix:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=remix:nodejs /app/package.json ./
 
-# 업로드 디렉토리 생성 및 권한 설정
-RUN mkdir -p /app/public/uploads && \
+# 엔트리포인트 스크립트
+COPY --chown=remix:nodejs scripts/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# 디렉토리 생성
+RUN mkdir -p /app/uploads /app/logs && \
     chown -R remix:nodejs /app
 
-# 비루트 사용자로 전환
 USER remix
 
-# 환경 변수
-ENV NODE_ENV production
-ENV PORT 3000
-ENV HOST 0.0.0.0
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOST=0.0.0.0
 
-# 헬스체크
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/api/health?quick=true || exit 1
-
-# 포트 노출
 EXPOSE 3000
 
-# 애플리케이션 실행
-CMD ["node", "server.js"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:3000/api/health || exit 1
+
+ENTRYPOINT ["dumb-init", "/usr/local/bin/docker-entrypoint.sh"]
+CMD ["npm", "start"]

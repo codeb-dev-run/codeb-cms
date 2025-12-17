@@ -1,0 +1,38 @@
+# CodeB CMS - Redis Container
+# 서버: 158.247.203.55 (Vultr Server 2 - Videopick App)
+# Quadlet: systemctl --user start codeb-cms-redis.service
+
+[Unit]
+Description=CodeB CMS Redis Cache
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/library/redis:7-alpine
+ContainerName=codeb-cms-redis
+AutoUpdate=registry
+
+# 네트워크
+Network=codeb-cms.network
+PublishPort=6380:6379
+
+# Redis 설정
+Exec=redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+# 볼륨
+Volume=codeb-cms-redis-data:/data:Z
+
+# 헬스체크
+HealthCmd=redis-cli ping | grep -q PONG
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+HealthStartPeriod=10s
+
+[Service]
+Restart=always
+RestartSec=10
+TimeoutStartSec=60
+
+[Install]
+WantedBy=default.target
