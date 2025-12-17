@@ -95,17 +95,33 @@ jobs:
             # 이미지 Pull
             podman pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
-            # Quadlet 서비스 재시작
-            systemctl --user daemon-reload
-            systemctl --user restart codeb-cms.service || systemctl --user start codeb-cms.service
+            # 기존 컨테이너 중지 및 삭제
+            podman stop codeb-cms 2>/dev/null || true
+            podman rm codeb-cms 2>/dev/null || true
+
+            # 환경 변수 파일 로드
+            ENV_FILE="/opt/codeb/projects/codeb-cms/.env.production"
+
+            # 새 컨테이너 실행
+            podman run -d \
+              --name codeb-cms \
+              --restart always \
+              -p ${{ env.APP_PORT }}:3000 \
+              --env-file "$ENV_FILE" \
+              --network codeb-cms-network \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
             # 헬스체크 대기
-            echo "⏳ Waiting for health check..."
+            echo "⏳ Waiting for container to start..."
             sleep 30
 
             # 상태 확인
             echo "📊 Container Status:"
             podman ps --filter name=codeb-cms --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+            # 로그 확인
+            echo "📜 Recent logs:"
+            podman logs --tail 20 codeb-cms || true
 
             # 헬스체크
             curl -sf http://localhost:${{ env.APP_PORT }}/api/health && echo "✅ Health OK" || echo "⚠️ Health check pending"
