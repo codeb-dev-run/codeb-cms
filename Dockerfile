@@ -4,7 +4,7 @@
 # ===========================================
 
 # Stage 1: Base
-FROM node:20-alpine AS base
+FROM node:25-alpine AS base
 RUN apk add --no-cache curl dumb-init
 WORKDIR /app
 
