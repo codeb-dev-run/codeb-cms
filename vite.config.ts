@@ -19,7 +19,7 @@ export default defineConfig({
         v3_lazyRouteDiscovery: true,
       },
     }),
-    socketIOPlugin(),
+    // Socket.IO 제거됨 - Centrifugo로 마이그레이션
   ],
   resolve: {
     alias: {
@@ -130,48 +130,3 @@ export default defineConfig({
     devSourcemap: true
   }
 });
-
-function socketIOPlugin() {
-  return {
-    name: "socket-io-plugin",
-    configureServer(server: { httpServer: { listening: boolean; on: (event: string, cb: () => void) => void } | null; ssrLoadModule: (path: string) => Promise<Record<string, unknown>> }) {
-      console.log("🔌 Socket.IO Plugin: configureServer called");
-      if (!server.httpServer) {
-        console.log("🔌 Socket.IO Plugin: server.httpServer is missing");
-        return;
-      }
-
-      console.log("🔌 Socket.IO Plugin: server.httpServer exists");
-      const httpServer = server.httpServer;
-
-      const initSocket = () => {
-        console.log("🔌 Socket.IO Plugin: Initializing Socket.IO...");
-        server.ssrLoadModule("./app/lib/socket/socket.server.ts")
-          .then((module: Record<string, unknown>) => {
-            console.log("🔌 Socket.IO Plugin: Module loaded", Object.keys(module));
-            if (typeof module.initializeSocketIO === 'function') {
-              module.initializeSocketIO(httpServer);
-              console.log("🔌 Socket.IO Plugin: initializeSocketIO called");
-            } else {
-              console.error("🔌 Socket.IO Plugin: initializeSocketIO not found in module");
-            }
-          })
-          .catch((err: Error) => {
-            console.error("🔌 Socket.IO Plugin: Failed to load module:", err);
-          });
-      };
-
-      if (httpServer.listening) {
-        console.log("🔌 Socket.IO Plugin: Server already listening");
-        initSocket();
-      } else {
-        httpServer.on('listening', () => {
-          console.log("🔌 Socket.IO Plugin: Server listening event fired");
-          initSocket();
-        });
-      }
-    },
-  };
-}
-
-

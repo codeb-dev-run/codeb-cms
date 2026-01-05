@@ -1,5 +1,5 @@
 {
-  "name": "codeb-cms",
+  "name": "vsvs-kr",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -46,7 +46,7 @@
     "@remix-run/node": "^2.16.8",
     "@remix-run/react": "^2.16.8",
     "@remix-run/serve": "^2.16.8",
-    "@socket.io/redis-adapter": "^8.3.0",
+    "centrifuge": "^5.2.2",
     "@tiptap/extension-code-block-lowlight": "^3.11.0",
     "@tiptap/extension-image": "^3.11.0",
     "@tiptap/extension-link": "^3.11.0",
@@ -78,8 +78,7 @@
     "react-hook-form": "^7.59.0",
     "react-parallax-tilt": "^1.7.311",
     "sharp": "^0.34.3",
-    "socket.io": "^4.7.5",
-    "socket.io-client": "^4.7.5",
+    "jsonwebtoken": "^9.0.2",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
@@ -97,6 +96,7 @@
     "@types/morgan": "^1.9.9",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
+    "@types/jsonwebtoken": "^9.0.7",
     "@vitest/coverage-v8": "^2.1.8",
     "@vitest/ui": "^2.1.8",
     "autoprefixer": "^10.4.21",

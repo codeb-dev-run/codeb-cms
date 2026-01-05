@@ -32,6 +32,9 @@ export const links: LinksFunction = () => [
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap",
   },
+  // PWA
+  { rel: "manifest", href: "/manifest.json" },
+  { rel: "apple-touch-icon", href: "/icons/icon-192x192.png" },
 ];
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -208,6 +211,11 @@ function Document({ children, theme, themeCSS, settings, isAdminPage }: { childr
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {/* PWA Meta Tags */}
+        <meta name="theme-color" content="#1f2937" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="mobile-web-app-capable" content="yes" />
         {settings?.site_name && <title>{settings.site_name}</title>}
         {settings?.site_description && <meta name="description" content={settings.site_description} />}
         <Meta />
