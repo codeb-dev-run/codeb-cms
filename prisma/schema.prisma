@@ -47,6 +47,10 @@ model User {
   oauthAccounts          OAuthAccount[]
   posts                  Post[]
   sessions               Session[]
+  // 참여형 이벤트 시스템
+  participations         Participation[]
+  userPoints             UserPoints?
+  leaderboardEntries     LeaderboardEntry[]
 
   @@unique([provider, providerId])
   @@map("users")
@@ -331,4 +335,130 @@ enum PostStatus {
 enum VoteType {
   LIKE
   DISLIKE
+}
+
+// ========================================
+// 참여형 이벤트 시스템 (Phase 1)
+// ========================================
+
+enum EventType {
+  BINARY       // 좋아요/싫어요 (기존 VoteType과 유사)
+  ODD_EVEN     // 홀짝
+  MULTI_CHOICE // 다지선다 (최대 4개)
+  PREDICTION   // 예측 (숫자, 텍스트)
+}
+
+enum EventStatus {
+  UPCOMING   // 예정
+  OPEN       // 진행중
+  CLOSED     // 마감
+  SETTLED    // 정산완료
+  CANCELLED  // 취소
+}
+
+// 참여형 이벤트 모델
+model ParticipationEvent {
+  id                String         @id @default(cuid())
+  type              EventType
+  title             String
+  description       String?
+  status            EventStatus    @default(UPCOMING)
+  startsAt          DateTime       @map("starts_at")
+  endsAt            DateTime       @map("ends_at")
+  options           Json           // [{id: "A", label: "홀", color: "#ef4444", icon: "circle"}, ...]
+  correctAnswer     String?        @map("correct_answer") // 정답 (이벤트 종료 후 입력)
+  resultAt          DateTime?      @map("result_at")
+  pointCost         Int            @default(0) @map("point_cost") // 참여 비용
+  rewardPool        Int            @default(0) @map("reward_pool") // 보상 풀
+  rewardMultiplier  Float          @default(2.0) @map("reward_multiplier") // 승리 보상 배수
+  totalParticipants Int            @default(0) @map("total_participants")
+  imageUrl          String?        @map("image_url")
+  isPublished       Boolean        @default(true) @map("is_published")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  participations    Participation[]
+
+  @@index([status])
+  @@index([type])
+  @@index([startsAt])
+  @@index([endsAt])
+  @@map("participation_events")
+}
+
+// 참여 기록
+model Participation {
+  id        String             @id @default(cuid())
+  eventId   String             @map("event_id")
+  userId    String             @map("user_id")
+  choice    String             // 선택한 옵션 ID
+  points    Int                @default(0) // 베팅 포인트
+  isWinner  Boolean?           @map("is_winner") // 승리 여부 (정산 후)
+  reward    Int?               // 획득 보상 (정산 후)
+  ipAddress String?            @map("ip_address")
+  createdAt DateTime           @default(now()) @map("created_at")
+  event     ParticipationEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("participations")
+}
+
+// 사용자 포인트
+model UserPoints {
+  id           String             @id @default(cuid())
+  userId       String             @unique @map("user_id")
+  balance      Int                @default(0) // 현재 보유 포인트
+  lifetime     Int                @default(0) // 누적 획득 포인트
+  wins         Int                @default(0) // 승리 횟수
+  losses       Int                @default(0) // 패배 횟수
+  streak       Int                @default(0) // 연속 승리
+  maxStreak    Int                @default(0) @map("max_streak") // 최대 연속 승리
+  lastCheckIn  DateTime?          @map("last_check_in") // 마지막 출석
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions PointTransaction[]
+
+  @@index([balance])
+  @@index([lifetime])
+  @@map("user_points")
+}
+
+// 포인트 거래 내역
+model PointTransaction {
+  id          String     @id @default(cuid())
+  userPointId String     @map("user_point_id")
+  type        String     // EARN_SIGNUP, EARN_CHECKIN, EARN_WIN, SPEND_EVENT, REFUND 등
+  amount      Int        // 양수: 획득, 음수: 소비
+  balance     Int        // 거래 후 잔액
+  eventId     String?    @map("event_id") // 관련 이벤트 ID
+  description String?    // 상세 설명
+  createdAt   DateTime   @default(now()) @map("created_at")
+  userPoints  UserPoints @relation(fields: [userPointId], references: [id], onDelete: Cascade)
+
+  @@index([userPointId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("point_transactions")
+}
+
+// 리더보드 엔트리
+model LeaderboardEntry {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  period    String   // daily, weekly, monthly, all_time
+  points    Int      @default(0)
+  rank      Int      @default(0)
+  wins      Int      @default(0)
+  winRate   Float    @default(0) @map("win_rate") // 승률
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, period])
+  @@index([period, points(sort: Desc)])
+  @@index([period, rank])
+  @@map("leaderboard_entries")
 }

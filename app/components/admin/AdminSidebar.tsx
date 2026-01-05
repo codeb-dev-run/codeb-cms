@@ -12,6 +12,10 @@ import {
   BarChart3,
   Globe,
   Blocks,
+  Gamepad2,
+  Coins,
+  Trophy,
+  Activity,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { useState } from "react";
@@ -48,9 +52,33 @@ const sidebarItems = [
     icon: Blocks,
   },
   {
+    title: "이벤트 관리",
+    href: "/admin/events",
+    icon: Gamepad2,
+    description: "투표/참여 이벤트 관리",
+  },
+  {
+    title: "포인트 관리",
+    href: "/admin/points",
+    icon: Coins,
+    description: "포인트 시스템 관리",
+  },
+  {
+    title: "리더보드",
+    href: "/admin/leaderboard",
+    icon: Trophy,
+    description: "순위 현황",
+  },
+  {
     title: "통계 분석",
     href: "/admin/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "성능 모니터링",
+    href: "/admin/performance",
+    icon: Activity,
+    description: "QPS 10K 실시간 모니터링",
   },
   {
     title: "사이트 설정",

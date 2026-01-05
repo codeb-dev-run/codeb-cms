@@ -1,3 +1,11 @@
+/**
+ * 게시물 상세 페이지
+ *
+ * QPS 10K 최적화:
+ * - 조회수: Redis 카운터 → 배치 DB 업데이트 (매 5분)
+ * - DB 직접 UPDATE 제거
+ */
+
 import { json, redirect, type LoaderFunctionArgs, type ActionFunctionArgs } from "@remix-run/node";
 import { useLoaderData, Form, useSubmit, useNavigate, Link, useFetcher } from "@remix-run/react";
 import { useState } from "react";
@@ -27,15 +35,8 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { cn } from "~/lib/utils";
-
-// 클라이언트 IP 추출 헬퍼
-function getClientIP(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
-  }
-  return request.headers.get("x-real-ip") || "unknown";
-}
+import { incrementViewCount } from "~/lib/performance/qps-optimizer.server";
+import { getClientIP } from "~/lib/middleware/rate-limiter.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { categorySlug, postId } = params;
@@ -88,19 +89,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("잘못된 카테고리입니다", { status: 404 });
   }
 
-  // 조회수 증가 (세션/쿠키 기반 중복 방지 - 간단한 IP 기반으로 구현)
-  // 실제 프로덕션에서는 Redis나 세션 기반으로 구현 권장
+  // QPS 10K 최적화: Redis 카운터로 조회수 관리 (배치로 DB 업데이트)
   const viewKey = `view_${post.id}_${user?.id || clientIP}`;
   const cookieHeader = request.headers.get("Cookie") || "";
   const hasViewed = cookieHeader.includes(viewKey);
 
   let updatedViews = post.views;
   if (!hasViewed) {
-    await db.post.update({
-      where: { id: post.id },
-      data: { views: { increment: 1 } },
-    });
-    updatedViews = post.views + 1;
+    // Redis 카운터 증가 (DB 직접 업데이트 제거 - 5분마다 배치 처리)
+    const redisCount = await incrementViewCount(post.id);
+    updatedViews = post.views + redisCount;
   }
 
   // 사용자가 이미 추천했는지 확인 (PostVote 테이블 활용)

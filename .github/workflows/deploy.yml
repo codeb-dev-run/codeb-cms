@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://cms.vsvs.kr
+      url: https://vsvs.kr
 
     steps:
       - name: Deploy to Vultr Server 2
