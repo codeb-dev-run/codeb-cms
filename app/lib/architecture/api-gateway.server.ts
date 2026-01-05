@@ -449,7 +449,7 @@ export class ApiGateway {
     }));
 
     return {
-      title: 'Blee CMS API',
+      title: 'CodeB CMS API',
       version: '1.0.0',
       baseUrl: process.env.API_BASE_URL || 'http://localhost:3000/api',
       routes,

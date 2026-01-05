@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 프로덕션 환경 설정 스크립트
-# BleeCMS 프로덕션 배포를 위한 자동화 설정
+# CodeB CMS 프로덕션 배포를 위한 자동화 설정
 
 set -e  # 오류 발생 시 스크립트 중단
 
@@ -32,7 +32,7 @@ log_error() {
 # 제목 출력
 echo -e "${BLUE}"
 echo "=================================================="
-echo "        BleeCMS 프로덕션 환경 설정 스크립트"
+echo "        CodeB CMS 프로덕션 환경 설정 스크립트"
 echo "=================================================="
 echo -e "${NC}"
 
@@ -273,7 +273,7 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  - job_name: 'blee-cms-app'
+  - job_name: 'codeb-cms-app'
     static_configs:
       - targets: ['app:3000']
     scrape_interval: 30s

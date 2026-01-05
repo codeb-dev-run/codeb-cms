@@ -8,14 +8,14 @@ async function main() {
 
   // 1. 사용자 생성 (관리자)
   let admin = await prisma.user.findUnique({
-    where: { email: 'admin@bleecms.com' }
+    where: { email: 'admin@codeb.kr' }
   });
 
   if (!admin) {
     const hashedPassword = await bcrypt.hash('admin123!@#', 10);
     admin = await prisma.user.create({
       data: {
-        email: 'admin@bleecms.com',
+        email: 'admin@codeb.kr',
         username: 'admin',
         password: hashedPassword,
         name: '관리자',
@@ -174,7 +174,7 @@ async function main() {
       type: 'hero',
       name: '히어로 섹션',
       config: JSON.stringify({
-        title: '블리CMS에 오신 것을 환영합니다',
+        title: 'CodeB CMS에 오신 것을 환영합니다',
         subtitle: '다양한 정보와 커뮤니티를 한 곳에서',
         backgroundImage: '/images/hero-bg.jpg',
         ctaText: '시작하기',
@@ -243,8 +243,8 @@ async function main() {
 
   // 5. 사이트 설정
   const settings = [
-    { key: 'site_name', value: '블리CMS', type: 'string', category: 'general', label: '사이트 이름' },
-    { key: 'site_description', value: '다양한 정보와 커뮤니티를 제공하는 블리CMS', type: 'string', category: 'general', label: '사이트 설명' },
+    { key: 'site_name', value: 'CodeB CMS', type: 'string', category: 'general', label: '사이트 이름' },
+    { key: 'site_description', value: 'QPS 10K+ 고성능 한국형 커뮤니티 플랫폼', type: 'string', category: 'general', label: '사이트 설명' },
     { key: 'posts_per_page', value: '10', type: 'number', category: 'general', label: '페이지당 게시물 수' },
     { key: 'allow_registration', value: 'true', type: 'boolean', category: 'general', label: '회원가입 허용' },
   ];

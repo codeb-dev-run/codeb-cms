@@ -17,7 +17,7 @@ import { security } from './env.server';
  */
 export const redisSessionStorage = createCookieSessionStorage({
   cookie: {
-    name: 'blee-cms-session',
+    name: 'codeb-cms-session',
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60, // 7일 (초 단위)

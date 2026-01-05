@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 블리CMS MCP 명령어 스크립트
+# CodeB CMS MCP 명령어 스크립트
 # Contest Continuity MCP를 활용한 개발 워크플로우
 
 set -e
@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # 프로젝트 경로
-PROJECT_PATH="/Users/admin/new_project/chating/블리CMS/blee-cms"
+PROJECT_PATH="/Users/admin/new_project/chating/CodeB CMS/codeb-cms"
 MCP_CONFIG="$PROJECT_PATH/.mcp/config.json"
 CONTEXT_ID="nextjs-contest-2025-09-05T05-54-46-591Z"
 
@@ -40,7 +40,7 @@ print_info() {
 capture_context() {
     print_header "컨텍스트 캡처 중..."
     
-    local context_name=${1:-"BleeCMS-$(date +%Y%m%d-%H%M%S)"}
+    local context_name=${1:-"CodeB CMS-$(date +%Y%m%d-%H%M%S)"}
     
     print_info "컨텍스트 이름: $context_name"
     print_info "프로젝트 경로: $PROJECT_PATH"
@@ -146,7 +146,7 @@ check_status() {
         
         echo -e "\n${BLUE}현재 설정:${NC}"
         echo "- Context ID: $CONTEXT_ID"
-        echo "- 프로젝트: 블리CMS"
+        echo "- 프로젝트: CodeB CMS"
         echo "- 상태: Active"
         echo "- 캡처 시간: 2025-09-05T05:54:46.660Z"
     else
@@ -157,7 +157,7 @@ check_status() {
 
 # 7. 도움말
 show_help() {
-    print_header "블리CMS MCP 명령어 도움말"
+    print_header "CodeB CMS MCP 명령어 도움말"
     
     echo "사용법: $0 [명령어] [옵션]"
     echo ""

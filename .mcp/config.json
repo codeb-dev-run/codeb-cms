@@ -1,7 +1,7 @@
 {
-  "name": "blee-cms-mcp",
+  "name": "codeb-cms-mcp",
   "version": "1.0.0",
-  "description": "블리CMS MCP 통합 설정",
+  "description": "CodeBCMS MCP 통합 설정",
   "servers": {
     "contest-continuity": {
       "enabled": true,
@@ -17,12 +17,12 @@
           "framework": "nextjs"
         }
       },
-      "projectPath": "/Users/admin/new_project/chating/블리CMS/blee-cms",
+      "projectPath": "/Users/admin/new_project/chating/CodeBCMS/codeb-cms",
       "status": "active"
     }
   },
   "project": {
-    "name": "블리CMS (BleeCMS)",
+    "name": "CodeBCMS (CodeBCMS)",
     "type": "fullstack-cms",
     "framework": "nextjs",
     "migration": {

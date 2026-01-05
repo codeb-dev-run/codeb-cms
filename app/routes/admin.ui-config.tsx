@@ -187,7 +187,7 @@ export default function AdminUIConfig() {
                         id="title"
                         name="title"
                         defaultValue={uiConfig.header.title}
-                        placeholder="Blee CMS"
+                        placeholder="CodeB CMS"
                       />
                     </div>
                   </div>

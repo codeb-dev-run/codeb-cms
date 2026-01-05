@@ -7,9 +7,9 @@ import { performance } from 'perf_hooks';
 import { getRedisCluster } from '../redis/cluster.server';
 
 // 기본 시스템 메트릭 수집 활성화 (한 번만 실행)
-if (!register.getSingleMetric('blee_cms_process_cpu_user_seconds_total')) {
+if (!register.getSingleMetric('codeb_cms_process_cpu_user_seconds_total')) {
   collectDefaultMetrics({
-    prefix: 'blee_cms_',
+    prefix: 'codeb_cms_',
     timeout: 10000,
     gcDurationBuckets: [0.001, 0.01, 0.1, 1, 2, 5],
   });
@@ -17,13 +17,13 @@ if (!register.getSingleMetric('blee_cms_process_cpu_user_seconds_total')) {
 
 // HTTP 요청 메트릭
 export const httpRequestsTotal = new Counter({
-  name: 'blee_cms_http_requests_total',
+  name: 'codeb_cms_http_requests_total',
   help: 'Total number of HTTP requests',
   labelNames: ['method', 'route', 'status_code'],
 });
 
 export const httpRequestDuration = new Histogram({
-  name: 'blee_cms_http_request_duration_seconds',
+  name: 'codeb_cms_http_request_duration_seconds',
   help: 'Duration of HTTP requests in seconds',
   labelNames: ['method', 'route', 'status_code'],
   buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 2, 5],
@@ -31,42 +31,42 @@ export const httpRequestDuration = new Histogram({
 
 // 데이터베이스 메트릭
 export const databaseConnectionsActive = new Gauge({
-  name: 'blee_cms_database_connections_active',
+  name: 'codeb_cms_database_connections_active',
   help: 'Number of active database connections',
 });
 
 export const databaseConnectionsIdle = new Gauge({
-  name: 'blee_cms_database_connections_idle',
+  name: 'codeb_cms_database_connections_idle',
   help: 'Number of idle database connections',
 });
 
 export const databaseQueryDuration = new Histogram({
-  name: 'blee_cms_database_query_duration_seconds',
+  name: 'codeb_cms_database_query_duration_seconds',
   help: 'Duration of database queries in seconds',
   labelNames: ['query_type', 'table', 'operation'],
   buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 2],
 });
 
 export const databaseQueriesTotal = new Counter({
-  name: 'blee_cms_database_queries_total',
+  name: 'codeb_cms_database_queries_total',
   help: 'Total number of database queries',
   labelNames: ['query_type', 'table', 'operation', 'status'],
 });
 
 // Redis/캐시 메트릭
 export const cacheOperationsTotal = new Counter({
-  name: 'blee_cms_cache_operations_total',
+  name: 'codeb_cms_cache_operations_total',
   help: 'Total number of cache operations',
   labelNames: ['operation', 'result', 'key_type'],
 });
 
 export const cacheHitRate = new Gauge({
-  name: 'blee_cms_cache_hit_rate',
+  name: 'codeb_cms_cache_hit_rate',
   help: 'Cache hit rate percentage',
 });
 
 export const cacheResponseTime = new Histogram({
-  name: 'blee_cms_cache_response_time_seconds',
+  name: 'codeb_cms_cache_response_time_seconds',
   help: 'Cache response time in seconds',
   labelNames: ['operation', 'key_type'],
   buckets: [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1],
@@ -74,61 +74,61 @@ export const cacheResponseTime = new Histogram({
 
 // WebSocket/실시간 메트릭
 export const websocketConnectionsActive = new Gauge({
-  name: 'blee_cms_websocket_connections_active',
+  name: 'codeb_cms_websocket_connections_active',
   help: 'Number of active WebSocket connections',
 });
 
 export const websocketMessagesTotal = new Counter({
-  name: 'blee_cms_websocket_messages_total',
+  name: 'codeb_cms_websocket_messages_total',
   help: 'Total number of WebSocket messages',
   labelNames: ['direction', 'event_type'],
 });
 
 // 사용자 세션 메트릭
 export const activeUsers = new Gauge({
-  name: 'blee_cms_active_users',
+  name: 'codeb_cms_active_users',
   help: 'Number of active users',
 });
 
 export const sessionDuration = new Histogram({
-  name: 'blee_cms_session_duration_seconds',
+  name: 'codeb_cms_session_duration_seconds',
   help: 'User session duration in seconds',
   buckets: [60, 300, 900, 1800, 3600, 7200, 14400, 28800, 86400],
 });
 
 // 콘텐츠 메트릭
 export const postsTotal = new Gauge({
-  name: 'blee_cms_posts_total',
+  name: 'codeb_cms_posts_total',
   help: 'Total number of posts',
   labelNames: ['status', 'category'],
 });
 
 export const commentsTotal = new Gauge({
-  name: 'blee_cms_comments_total',
+  name: 'codeb_cms_comments_total',
   help: 'Total number of comments',
 });
 
 export const pageViews = new Counter({
-  name: 'blee_cms_page_views_total',
+  name: 'codeb_cms_page_views_total',
   help: 'Total number of page views',
   labelNames: ['page_type', 'category'],
 });
 
 // 큐/작업 메트릭
 export const queueSize = new Gauge({
-  name: 'blee_cms_queue_size',
+  name: 'codeb_cms_queue_size',
   help: 'Number of jobs in queue',
   labelNames: ['queue_name'],
 });
 
 export const queueJobsProcessed = new Counter({
-  name: 'blee_cms_queue_jobs_processed_total',
+  name: 'codeb_cms_queue_jobs_processed_total',
   help: 'Total number of processed queue jobs',
   labelNames: ['queue_name', 'status'],
 });
 
 export const queueJobDuration = new Histogram({
-  name: 'blee_cms_queue_job_duration_seconds',
+  name: 'codeb_cms_queue_job_duration_seconds',
   help: 'Queue job processing duration in seconds',
   labelNames: ['queue_name', 'job_type'],
   buckets: [0.1, 0.5, 1, 2, 5, 10, 30, 60],
@@ -136,13 +136,13 @@ export const queueJobDuration = new Histogram({
 
 // 파일 업로드 메트릭
 export const fileUploadsTotal = new Counter({
-  name: 'blee_cms_file_uploads_total',
+  name: 'codeb_cms_file_uploads_total',
   help: 'Total number of file uploads',
   labelNames: ['file_type', 'status'],
 });
 
 export const fileUploadSize = new Histogram({
-  name: 'blee_cms_file_upload_size_bytes',
+  name: 'codeb_cms_file_upload_size_bytes',
   help: 'File upload size in bytes',
   labelNames: ['file_type'],
   buckets: [1024, 10240, 102400, 1048576, 10485760, 104857600],
@@ -150,19 +150,19 @@ export const fileUploadSize = new Histogram({
 
 // 보안 메트릭
 export const authAttemptsTotal = new Counter({
-  name: 'blee_cms_auth_attempts_total',
+  name: 'codeb_cms_auth_attempts_total',
   help: 'Total number of authentication attempts',
   labelNames: ['method', 'result'],
 });
 
 export const securityEventsTotal = new Counter({
-  name: 'blee_cms_security_events_total',
+  name: 'codeb_cms_security_events_total',
   help: 'Total number of security events',
   labelNames: ['event_type', 'severity'],
 });
 
 export const rateLimitHits = new Counter({
-  name: 'blee_cms_rate_limit_hits_total',
+  name: 'codeb_cms_rate_limit_hits_total',
   help: 'Total number of rate limit hits',
   labelNames: ['endpoint', 'limit_type'],
 });

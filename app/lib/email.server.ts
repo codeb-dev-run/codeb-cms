@@ -49,7 +49,7 @@ export const emailTemplates = {
     const userName = user.name || user.username;
     
     return {
-      subject: '블리CMS 비밀번호 재설정',
+      subject: 'CodeB CMS 비밀번호 재설정',
       html: `
         <!DOCTYPE html>
         <html>
@@ -62,7 +62,7 @@ export const emailTemplates = {
           <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
             <h2 style="color: #2563eb; margin-bottom: 20px;">비밀번호 재설정 요청</h2>
             <p>안녕하세요, ${userName}님!</p>
-            <p>블리CMS 계정의 비밀번호 재설정을 요청하셨습니다.</p>
+            <p>CodeB CMS 계정의 비밀번호 재설정을 요청하셨습니다.</p>
             <p>아래 버튼을 클릭하여 새로운 비밀번호를 설정해주세요:</p>
             
             <div style="text-align: center; margin: 30px 0;">
@@ -87,7 +87,7 @@ export const emailTemplates = {
             </div>
             
             <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
-              <p>© 2024 블리CMS. All rights reserved.</p>
+              <p>© 2024 CodeB CMS. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -96,7 +96,7 @@ export const emailTemplates = {
       text: `
 안녕하세요, ${userName}님!
 
-블리CMS 계정의 비밀번호 재설정을 요청하셨습니다.
+CodeB CMS 계정의 비밀번호 재설정을 요청하셨습니다.
 
 다음 링크를 클릭하여 새로운 비밀번호를 설정해주세요:
 ${resetUrl}
@@ -106,7 +106,7 @@ ${resetUrl}
 - 비밀번호 재설정을 요청하지 않으셨다면 이 이메일을 무시하세요.
 - 보안을 위해 이 이메일을 다른 사람과 공유하지 마세요.
 
-© 2024 블리CMS. All rights reserved.
+© 2024 CodeB CMS. All rights reserved.
       `
     };
   },
@@ -119,7 +119,7 @@ ${resetUrl}
     const loginUrl = `${env.NODE_ENV === 'production' ? 'https://your-domain.com' : 'http://localhost:3000'}/auth/login`;
     
     return {
-      subject: '블리CMS에 오신 것을 환영합니다!',
+      subject: 'CodeB CMS에 오신 것을 환영합니다!',
       html: `
         <!DOCTYPE html>
         <html>
@@ -132,7 +132,7 @@ ${resetUrl}
           <div style="background-color: #f0f9ff; padding: 30px; border-radius: 10px;">
             <h2 style="color: #0ea5e9; margin-bottom: 20px;">🎉 환영합니다!</h2>
             <p>안녕하세요, ${userName}님!</p>
-            <p>블리CMS 커뮤니티에 가입해주셔서 감사합니다.</p>
+            <p>CodeB CMS 커뮤니티에 가입해주셔서 감사합니다.</p>
             
             <div style="background-color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3 style="margin-top: 0; color: #1e40af;">계정 정보</h3>
@@ -161,7 +161,7 @@ ${resetUrl}
             </div>
             
             <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
-              <p>© 2024 블리CMS. All rights reserved.</p>
+              <p>© 2024 CodeB CMS. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -170,7 +170,7 @@ ${resetUrl}
       text: `
 안녕하세요, ${userName}님!
 
-블리CMS 커뮤니티에 가입해주셔서 감사합니다.
+CodeB CMS 커뮤니티에 가입해주셔서 감사합니다.
 
 계정 정보:
 - 사용자명: ${user.username}
@@ -187,7 +187,7 @@ ${resetUrl}
 
 궁금한 점이 있으시면 언제든 문의해주세요!
 
-© 2024 블리CMS. All rights reserved.
+© 2024 CodeB CMS. All rights reserved.
       `
     };
   },
@@ -200,7 +200,7 @@ ${resetUrl}
     const verifyUrl = `${env.NODE_ENV === 'production' ? 'https://your-domain.com' : 'http://localhost:3000'}/auth/verify-email?token=${verificationToken}`;
     
     return {
-      subject: '블리CMS 이메일 주소 확인',
+      subject: 'CodeB CMS 이메일 주소 확인',
       html: `
         <!DOCTYPE html>
         <html>
@@ -213,7 +213,7 @@ ${resetUrl}
           <div style="background-color: #fefce8; padding: 30px; border-radius: 10px;">
             <h2 style="color: #ca8a04; margin-bottom: 20px;">📧 이메일 주소 확인</h2>
             <p>안녕하세요, ${userName}님!</p>
-            <p>블리CMS 계정의 이메일 주소 확인을 위해 아래 버튼을 클릭해주세요:</p>
+            <p>CodeB CMS 계정의 이메일 주소 확인을 위해 아래 버튼을 클릭해주세요:</p>
             
             <div style="text-align: center; margin: 30px 0;">
               <a href="${verifyUrl}" 
@@ -232,7 +232,7 @@ ${resetUrl}
             </div>
             
             <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
-              <p>© 2024 블리CMS. All rights reserved.</p>
+              <p>© 2024 CodeB CMS. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -241,12 +241,12 @@ ${resetUrl}
       text: `
 안녕하세요, ${userName}님!
 
-블리CMS 계정의 이메일 주소 확인을 위해 다음 링크를 클릭해주세요:
+CodeB CMS 계정의 이메일 주소 확인을 위해 다음 링크를 클릭해주세요:
 ${verifyUrl}
 
 참고: 이메일 확인을 완료하면 모든 기능을 이용하실 수 있습니다.
 
-© 2024 블리CMS. All rights reserved.
+© 2024 CodeB CMS. All rights reserved.
       `
     };
   }

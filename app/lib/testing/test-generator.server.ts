@@ -662,7 +662,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Home Page', () => {
   test('should load home page successfully', async ({ page }) => {
     await page.goto('/');
-    await expect(page).toHaveTitle(/Blee CMS/);
+    await expect(page).toHaveTitle(/CodeB CMS/);
   });
 });
 

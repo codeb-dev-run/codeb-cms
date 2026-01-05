@@ -33,7 +33,7 @@ export function MobileMenu({ open, onOpenChange, menus = [], user }: MobileMenuP
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="w-[300px] sm:w-[400px]">
         <SheetHeader>
-          <SheetTitle className="text-left text-[#2563EB]">Blee CMS</SheetTitle>
+          <SheetTitle className="text-left text-[#2563EB]">CodeB CMS</SheetTitle>
         </SheetHeader>
         
         <nav className="mt-8 flex flex-col gap-2">

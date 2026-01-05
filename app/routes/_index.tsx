@@ -12,8 +12,8 @@ import { User, LogIn } from "lucide-react";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Blee CMS - 현대적인 콘텐츠 관리 시스템" },
-    { name: "description", content: "Blee CMS로 콘텐츠를 효율적으로 관리하세요" },
+    { title: "CodeB CMS - 현대적인 콘텐츠 관리 시스템" },
+    { name: "description", content: "CodeB CMS로 콘텐츠를 효율적으로 관리하세요" },
   ];
 };
 

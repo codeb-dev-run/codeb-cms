@@ -16,7 +16,7 @@ const metadata: IPluginMetadata = {
   name: '예제 플러그인',
   version: '1.0.0',
   description: '플러그인 시스템을 시연하기 위한 예제 플러그인입니다',
-  author: 'Blee CMS',
+  author: 'CodeB CMS',
   license: 'MIT',
   homepage: 'https://example.com/plugins/example',
   minCmsVersion: '1.0.0',

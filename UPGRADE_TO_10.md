@@ -21,7 +21,7 @@ npm run dev
 
 ### 2. Package.json 최적화
 - ✅ `"type": "module"` 추가 (모듈 경고 제거)
-- ✅ 프로젝트 이름 변경: `blee-cms` → `codeb-cms`
+- ✅ 프로젝트 이름 변경: `codeb-cms` → `codeb-cms`
 - ✅ 개발 스크립트 추가:
   - `npm run setup` - 원클릭 환경 설정
   - `npm run docker:up/down` - Docker 관리

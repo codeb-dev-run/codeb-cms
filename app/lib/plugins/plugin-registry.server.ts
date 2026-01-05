@@ -20,9 +20,9 @@ const pluginMetadataSchema = z.object({
   dependencies: z.record(z.string()).optional(),
   engines: z.object({
     node: z.string().optional(),
-    'blee-cms': z.string().optional(),
+    'codeb-cms': z.string().optional(),
   }).optional(),
-  blee: z.object({
+  codeb: z.object({
     apiVersion: z.string().default('1.0'),
     hooks: z.array(z.string()).optional(),
     permissions: z.array(z.string()).optional(),
@@ -114,7 +114,7 @@ class PluginRegistry {
           version: '0.0.0',
           description: 'Invalid plugin',
           author: 'unknown',
-          blee: { apiVersion: '1.0' },
+          codeb: { apiVersion: '1.0' },
         },
         status: 'error',
         error: error instanceof Error ? error.message : 'Unknown error',

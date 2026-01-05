@@ -111,7 +111,7 @@ export const validateEnvironment = () => {
 export const security = {
   // 세션 설정
   sessionConfig: {
-    name: 'blee_session',
+    name: 'codeb_session',
     secure: env.NODE_ENV === 'production',
     secrets: [env.SESSION_SECRET],
     sameSite: 'lax' as const,

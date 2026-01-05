@@ -40,31 +40,31 @@ const SMS_TEMPLATES: Record<string, SMSTemplate> = {
   VERIFICATION: {
     id: 'VERIFICATION',
     name: '인증번호 발송',
-    content: '[블리CMS] 인증번호는 {{code}}입니다. 5분 내에 입력해주세요.',
+    content: '[CodeB CMS] 인증번호는 {{code}}입니다. 5분 내에 입력해주세요.',
     variables: ['code']
   },
   PASSWORD_RESET: {
     id: 'PASSWORD_RESET',
     name: '비밀번호 재설정',
-    content: '[블리CMS] 비밀번호 재설정 링크입니다: {{link}}',
+    content: '[CodeB CMS] 비밀번호 재설정 링크입니다: {{link}}',
     variables: ['link']
   },
   WELCOME: {
     id: 'WELCOME',
     name: '가입 환영',
-    content: '[블리CMS] {{name}}님, 회원가입을 환영합니다! 서비스를 이용해보세요.',
+    content: '[CodeB CMS] {{name}}님, 회원가입을 환영합니다! 서비스를 이용해보세요.',
     variables: ['name']
   },
   ORDER_CONFIRMATION: {
     id: 'ORDER_CONFIRMATION',
     name: '주문 확인',
-    content: '[블리CMS] {{name}}님의 주문({{orderNumber}})이 확인되었습니다. 감사합니다.',
+    content: '[CodeB CMS] {{name}}님의 주문({{orderNumber}})이 확인되었습니다. 감사합니다.',
     variables: ['name', 'orderNumber']
   },
   PAYMENT_SUCCESS: {
     id: 'PAYMENT_SUCCESS',
     name: '결제 완료',
-    content: '[블리CMS] 결제가 완료되었습니다. 금액: {{amount}}원, 주문번호: {{orderNumber}}',
+    content: '[CodeB CMS] 결제가 완료되었습니다. 금액: {{amount}}원, 주문번호: {{orderNumber}}',
     variables: ['amount', 'orderNumber']
   }
 };

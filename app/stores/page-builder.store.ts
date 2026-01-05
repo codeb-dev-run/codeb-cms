@@ -88,7 +88,7 @@ function getDefaultSettings(type: BlockConfig['type']): Record<string, any> {
     case 'hero':
       return {
         title: '환영합니다',
-        subtitle: 'Blee CMS와 함께 시작하세요',
+        subtitle: 'CodeB CMS와 함께 시작하세요',
         backgroundImage: '',
         height: '400px',
         textAlign: 'center',

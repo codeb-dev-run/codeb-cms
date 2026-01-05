@@ -46,7 +46,7 @@ const SETTING_KEYS = {
 
 // 기본 설정값
 const DEFAULT_SETTINGS = {
-  [SETTING_KEYS.SITE_NAME]: 'Blee CMS',
+  [SETTING_KEYS.SITE_NAME]: 'CodeB CMS',
   [SETTING_KEYS.SITE_DESCRIPTION]: 'A modern content management system',
   [SETTING_KEYS.SITE_URL]: 'http://localhost:3000',
   [SETTING_KEYS.ALLOW_REGISTRATION]: 'true',
@@ -56,13 +56,13 @@ const DEFAULT_SETTINGS = {
   [SETTING_KEYS.MAINTENANCE_MODE]: 'false',
   [SETTING_KEYS.MAINTENANCE_MESSAGE]: '사이트 점검 중입니다. 잠시 후 다시 방문해주세요.',
   // SEO 기본값
-  [SETTING_KEYS.SEO_TITLE_TEMPLATE]: '%s | Blee CMS',
+  [SETTING_KEYS.SEO_TITLE_TEMPLATE]: '%s | CodeB CMS',
   [SETTING_KEYS.SEO_META_KEYWORDS]: '',
   [SETTING_KEYS.SEO_META_AUTHOR]: '',
   [SETTING_KEYS.SEO_FACEBOOK_APP_ID]: '',
   [SETTING_KEYS.SEO_TWITTER_HANDLE]: '',
   // 푸터 기본값
-  [SETTING_KEYS.FOOTER_EMAIL]: 'contact@bleecms.com',
+  [SETTING_KEYS.FOOTER_EMAIL]: 'contact@codeb-cms.com',
   [SETTING_KEYS.FOOTER_PHONE]: '02-1234-5678',
   [SETTING_KEYS.FOOTER_ADDRESS]: '서울특별시 강남구',
   [SETTING_KEYS.FOOTER_FACEBOOK]: 'https://facebook.com',

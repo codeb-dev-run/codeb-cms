@@ -121,7 +121,7 @@ export enum UIConfigKey {
  */
 export const DEFAULT_UI_CONFIG: UIConfig = {
   header: {
-    title: 'Blee CMS',
+    title: 'CodeB CMS',
     subtitle: '강력한 한국형 콘텐츠 관리 시스템',
     showSearch: true,
     showNavigation: true,
@@ -134,7 +134,7 @@ export const DEFAULT_UI_CONFIG: UIConfig = {
   
   footer: {
     enabled: true,
-    copyright: '© 2024 Blee CMS. All rights reserved.',
+    copyright: '© 2024 CodeB CMS. All rights reserved.',
     columns: [
       {
         title: '서비스',
@@ -155,7 +155,7 @@ export const DEFAULT_UI_CONFIG: UIConfig = {
       {
         title: '커뮤니티',
         links: [
-          { text: 'GitHub', url: 'https://github.com/blee-cms', external: true },
+          { text: 'GitHub', url: 'https://github.com/codeb-cms', external: true },
           { text: '블로그', url: '/blog', external: false },
         ],
       },
@@ -170,7 +170,7 @@ export const DEFAULT_UI_CONFIG: UIConfig = {
     hero: {
       enabled: true,
       title: '강력하고 유연한 콘텐츠 관리',
-      subtitle: 'Blee CMS로 현대적이고 확장 가능한 웹사이트를 구축하세요',
+      subtitle: 'CodeB CMS로 현대적이고 확장 가능한 웹사이트를 구축하세요',
       ctaButton: {
         text: '지금 시작하기',
         url: '/auth/register',
@@ -214,7 +214,7 @@ export const DEFAULT_UI_CONFIG: UIConfig = {
   },
   
   seo: {
-    siteName: 'Blee CMS',
+    siteName: 'CodeB CMS',
     description: '강력하고 유연한 한국형 콘텐츠 관리 시스템',
     keywords: 'CMS, 콘텐츠 관리, 블로그, 웹사이트, Korean',
     twitterCard: 'summary_large_image',

@@ -19,7 +19,7 @@ export function Footer({ menus = [], settings }: FooterProps) {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           {/* 브랜드 섹션 */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-[#2563EB] dark:text-blue-400">{settings?.site_name || 'Blee CMS'}</h3>
+            <h3 className="text-lg font-bold text-[#2563EB] dark:text-blue-400">{settings?.site_name || 'CodeB CMS'}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {settings?.site_description || '현대적이고 강력한 콘텐츠 관리 시스템으로 여러분의 아이디어를 실현하세요.'}
             </p>
@@ -152,7 +152,7 @@ export function Footer({ menus = [], settings }: FooterProps) {
 
         <div className="mt-8 border-t border-gray-200 dark:border-gray-800 pt-8">
           <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-            © {currentYear} {settings?.site_name || 'Blee CMS'}. All rights reserved.
+            © {currentYear} {settings?.site_name || 'CodeB CMS'}. All rights reserved.
           </p>
         </div>
       </div>

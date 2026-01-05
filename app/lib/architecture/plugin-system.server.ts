@@ -20,7 +20,7 @@ export class PluginManager {
   private pluginDirectories = [
     './plugins',
     './app/plugins',
-    './node_modules/@blee-cms/plugin-*'
+    './node_modules/@codeb-cms/plugin-*'
   ];
 
   /**
@@ -365,8 +365,8 @@ export class PluginManager {
       const packageJson = await fs.readFile(packageJsonPath, 'utf-8');
       const config = JSON.parse(packageJson);
       
-      // Blee CMS 플러그인인지 확인
-      if (config.keywords && config.keywords.includes('blee-cms-plugin')) {
+      // CodeB CMS 플러그인인지 확인
+      if (config.keywords && config.keywords.includes('codeb-cms-plugin')) {
         const pluginConfig: PluginConfig = {
           name: config.name,
           version: config.version,
@@ -374,7 +374,7 @@ export class PluginManager {
           main: path.join(pluginPath, config.main || 'index.js'),
           author: config.author,
           dependencies: config.dependencies || {},
-          bleeCmsVersion: config.bleeCmsVersion || '*',
+          codebCmsVersion: config.codebCmsVersion || '*',
         };
         
         await this.registerPlugin(pluginConfig);
@@ -512,7 +512,7 @@ export interface PluginConfig {
   main: string;
   author?: string;
   dependencies?: Record<string, string>;
-  bleeCmsVersion?: string;
+  codebCmsVersion?: string;
 }
 
 export interface PluginModule {

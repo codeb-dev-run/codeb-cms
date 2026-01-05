@@ -48,7 +48,7 @@ export function Header({ user, menus = [], onMenuClick, siteName, themeMode = "l
 
             {/* 로고 */}
             <Link to="/" className="flex items-center space-x-2">
-              <span className="text-xl font-bold text-[#2563EB] dark:text-blue-400">{siteName || 'Blee CMS'}</span>
+              <span className="text-xl font-bold text-[#2563EB] dark:text-blue-400">{siteName || 'CodeB CMS'}</span>
             </Link>
 
             {/* 데스크톱 네비게이션 */}

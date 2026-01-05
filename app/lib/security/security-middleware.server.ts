@@ -87,7 +87,7 @@ export function getSecureSessionConfig() {
   const isProduction = process.env.NODE_ENV === 'production';
   
   return {
-    name: 'blee-cms-session',
+    name: 'codeb-cms-session',
     secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,

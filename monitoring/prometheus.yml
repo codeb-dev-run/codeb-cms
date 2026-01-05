@@ -18,7 +18,7 @@ scrape_configs:
       - targets: ['localhost:9090']
 
   # Application metrics
-  - job_name: 'blee-cms-app'
+  - job_name: 'codeb-cms-app'
     static_configs:
       - targets: ['app:3000']
     metrics_path: '/metrics'
@@ -51,7 +51,7 @@ scrape_configs:
       - targets: ['traefik:8080']
 
   # Custom application metrics
-  - job_name: 'blee-cms-custom'
+  - job_name: 'codeb-cms-custom'
     static_configs:
       - targets: ['app:3000']
     metrics_path: '/api/metrics'
