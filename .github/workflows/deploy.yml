@@ -77,7 +77,7 @@ jobs:
 
     steps:
       - name: Deploy to Vultr Server 2
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.4
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
