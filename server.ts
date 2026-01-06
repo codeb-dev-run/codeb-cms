@@ -4,7 +4,9 @@ import compression from "compression";
 import express from "express";
 import morgan from "morgan";
 import { createServer } from "http";
-import { initializeSocketIO } from "./app/lib/socket/socket.server";
+
+// NOTE: WebSocket 통신은 Centrifugo 서버 사용 (ws.codeb.kr)
+// Socket.IO는 완전히 제거됨 - app/lib/centrifugo/ 참조
 
 installGlobals();
 
@@ -25,9 +27,6 @@ const remixHandler = createRequestHandler({
 
 const app = express();
 const httpServer = createServer(app);
-
-// Initialize Socket.IO
-initializeSocketIO(httpServer);
 
 app.use(compression());
 

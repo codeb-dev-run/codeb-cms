@@ -6,7 +6,7 @@ import { useLoaderData, useActionData, Form } from '@remix-run/react';
 import { requireUser } from '~/lib/auth.server';
 import { db } from '~/lib/db.server';
 import { pluginRegistry } from '~/lib/plugins/plugin-registry.server';
-import { getSocketIOInstance } from '~/lib/socket/socket.server';
+import { centrifugo } from '~/lib/centrifugo/client.server';
 import { checkRedisHealth } from '~/lib/cache/redis-cluster.server';
 import { getConnectionPoolStatus } from '~/lib/database/db-read-replica.server';
 import { sendAdminAnnouncement } from '~/lib/realtime/notification-system.server';
@@ -70,13 +70,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // 플러그인 상태
     pluginRegistry.getStats(),
 
-    // Socket.IO 상태
-    Promise.resolve().then(() => {
-      const io = getSocketIOInstance();
-      return {
-        status: io ? 'active' : 'inactive',
-        connections: io ? Math.floor(Math.random() * 100) : 0,
-      };
+    // Centrifugo 상태
+    Promise.resolve().then(async () => {
+      try {
+        const info = await centrifugo.info();
+        const totalConnections = info.nodes.reduce((sum, node) => sum + node.num_clients, 0);
+        return {
+          status: 'active',
+          connections: totalConnections,
+        };
+      } catch {
+        return {
+          status: 'inactive',
+          connections: 0,
+        };
+      }
     }),
 
     // 시스템 메트릭
@@ -284,7 +292,7 @@ export default function AdminSystem() {
           <div className="flex items-center">
             <Wifi className="h-8 w-8 text-green-500" />
             <div className="ml-4">
-              <h3 className="text-lg font-medium dark:text-gray-100">Socket.IO</h3>
+              <h3 className="text-lg font-medium dark:text-gray-100">Centrifugo</h3>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                 getStatusColor(socketStatus.status)
               }`}>

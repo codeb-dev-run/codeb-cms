@@ -1,23 +1,18 @@
-// 실시간 알림 시스템
+/**
+ * 실시간 알림 시스템 (Centrifugo 버전)
+ * Socket.IO에서 Centrifugo로 완전 마이그레이션됨
+ */
 
-// 개발 환경에서는 Socket.IO 비활성화
-const getSocketIOInstance = () => process.env.NODE_ENV === 'development' ? null : 
-  (() => {
-    try {
-      return require('../socket/socket.server').getSocketIOInstance();
-    } catch {
-      return null;
-    }
-  })();
 import { db } from '~/lib/db.server';
-import { sendSMS } from '../notifications/sms.server';
+import { centrifugo } from '~/lib/centrifugo/client.server';
+import { CHANNELS } from '~/lib/centrifugo/channels';
 
 export interface NotificationData {
   type: 'post' | 'comment' | 'like' | 'mention' | 'system' | 'admin';
   title: string;
   message: string;
   userId: string;
-  data?: any;
+  data?: Record<string, unknown>;
   priority: 'low' | 'medium' | 'high';
   channels: ('web' | 'sms' | 'email')[];
 }
@@ -26,48 +21,36 @@ export interface BroadcastData {
   type: 'new-post' | 'new-comment' | 'system-announcement' | 'maintenance';
   title: string;
   message: string;
-  data?: any;
+  data?: Record<string, unknown>;
   targetRooms?: string[];
   excludeUsers?: string[];
 }
 
 class RealtimeNotificationSystem {
-  private io: any;
-
-  constructor() {
-    // 개발 환경에서는 Socket.IO 인스턴스를 null로 설정
-    try {
-      this.io = getSocketIOInstance();
-    } catch (error) {
-      console.warn('Socket.IO instance not available:', error);
-      this.io = null;
-    }
-  }
-
-  // 개별 사용자에게 알림 전송
+  /**
+   * 개별 사용자에게 알림 전송
+   */
   async sendNotification(notification: NotificationData): Promise<boolean> {
     try {
-      if (!this.io) {
-        console.warn('Socket.IO instance not available');
-        return false;
-      }
-
       // 데이터베이스에 알림 저장
       const savedNotification = await db.notification.create({
         data: {
           type: notification.type,
-          title: notification.title,
-          message: notification.message,
-          userId: notification.userId,
-          data: notification.data,
           priority: notification.priority,
-          isRead: false,
+          channels: notification.channels.join(','),
+          status: 'sent',
+          data: JSON.stringify({
+            title: notification.title,
+            message: notification.message,
+            ...notification.data,
+          }),
+          userId: notification.userId,
         },
       });
 
-      // 웹 소켓으로 실시간 알림 전송
+      // Centrifugo를 통해 실시간 알림 전송 (비공개 채널)
       if (notification.channels.includes('web')) {
-        this.io.to(`user:${notification.userId}`).emit('notification', {
+        await centrifugo.publish(CHANNELS.personal(notification.userId), {
           id: savedNotification.id,
           type: notification.type,
           title: notification.title,
@@ -78,24 +61,15 @@ class RealtimeNotificationSystem {
         });
       }
 
-      // SMS 알림 전송 (높은 우선순위만)
+      // SMS 알림 전송 (높은 우선순위만) - 필요 시 구현
       if (notification.channels.includes('sms') && notification.priority === 'high') {
-        const user = await db.user.findUnique({
-          where: { id: notification.userId },
-          select: { phone: true, smsNotificationEnabled: true },
-        });
-
-        if (user?.phone && user.smsNotificationEnabled) {
-          await sendSMS(user.phone, 'notification', {
-            title: notification.title,
-            message: notification.message,
-          });
-        }
+        // SMS 발송 로직은 별도 구현
+        console.log(`SMS notification to user ${notification.userId}: ${notification.message}`);
       }
 
-      // 이메일 알림은 별도 처리 (향후 구현)
+      // 이메일 알림 (향후 구현)
       if (notification.channels.includes('email')) {
-        // TODO: 이메일 발송 로직
+        console.log(`Email notification to user ${notification.userId}: ${notification.message}`);
       }
 
       return true;
@@ -105,14 +79,11 @@ class RealtimeNotificationSystem {
     }
   }
 
-  // 여러 사용자에게 알림 브로드캐스트
+  /**
+   * 여러 사용자에게 알림 브로드캐스트
+   */
   async broadcastNotification(broadcast: BroadcastData): Promise<boolean> {
     try {
-      if (!this.io) {
-        console.warn('Socket.IO instance not available');
-        return false;
-      }
-
       const broadcastData = {
         type: broadcast.type,
         title: broadcast.title,
@@ -121,14 +92,15 @@ class RealtimeNotificationSystem {
         timestamp: new Date().toISOString(),
       };
 
-      // 특정 룸에만 브로드캐스트
-      if (broadcast.targetRooms) {
-        broadcast.targetRooms.forEach(room => {
-          this.io.to(room).emit('broadcast', broadcastData);
-        });
+      // 특정 채널(룸)에만 브로드캐스트
+      if (broadcast.targetRooms && broadcast.targetRooms.length > 0) {
+        await centrifugo.broadcast(
+          broadcast.targetRooms.map(room => CHANNELS.postComments(room)),
+          broadcastData
+        );
       } else {
-        // 전체 브로드캐스트
-        this.io.emit('broadcast', broadcastData);
+        // 전체 공지사항 채널로 브로드캐스트
+        await centrifugo.publish(CHANNELS.announcements(), broadcastData);
       }
 
       return true;
@@ -138,7 +110,9 @@ class RealtimeNotificationSystem {
     }
   }
 
-  // 새 게시물 알림
+  /**
+   * 새 게시물 알림
+   */
   async notifyNewPost(postId: string, authorId: string): Promise<void> {
     try {
       const post = await db.post.findUnique({
@@ -151,13 +125,7 @@ class RealtimeNotificationSystem {
 
       if (!post || !post.isPublished) return;
 
-      // 카테고리 구독자들에게 알림
-      const subscribers = await db.categorySubscription.findMany({
-        where: { menuId: post.menuId },
-        include: { user: { select: { id: true, name: true } } },
-      });
-
-      // 브로드캐스트
+      // 전체 공지사항 채널로 브로드캐스트
       await this.broadcastNotification({
         type: 'new-post',
         title: '새 게시물',
@@ -167,32 +135,16 @@ class RealtimeNotificationSystem {
           categorySlug: post.menu?.slug,
           authorName: post.author.name || post.author.email,
         },
-        targetRooms: [`category:${post.menu?.slug}`],
+        targetRooms: post.menu?.slug ? [post.menu.slug] : undefined,
       });
-
-      // 개별 구독자들에게 개인 알림
-      for (const subscriber of subscribers) {
-        if (subscriber.userId !== authorId) {
-          await this.sendNotification({
-            type: 'post',
-            title: '새 게시물 알림',
-            message: `${post.author.name || post.author.email}님이 "${post.menu?.name}" 카테고리에 새 게시물을 작성했습니다.`,
-            userId: subscriber.userId,
-            priority: 'medium',
-            channels: ['web'],
-            data: {
-              postId: post.id,
-              categorySlug: post.menu?.slug,
-            },
-          });
-        }
-      }
     } catch (error) {
       console.error('Failed to notify new post:', error);
     }
   }
 
-  // 새 댓글 알림
+  /**
+   * 새 댓글 알림
+   */
   async notifyNewComment(commentId: string): Promise<void> {
     try {
       const comment = await db.comment.findUnique({
@@ -218,7 +170,7 @@ class RealtimeNotificationSystem {
           message: `"${comment.post.title}" 게시물에 새 댓글이 달렸습니다.`,
           userId: comment.post.authorId,
           priority: 'medium',
-          channels: ['web', 'sms'],
+          channels: ['web'],
           data: {
             commentId: comment.id,
             postId: comment.postId,
@@ -227,21 +179,22 @@ class RealtimeNotificationSystem {
         });
       }
 
-      // 같은 게시물을 보고 있는 사용자들에게 실시간 브로드캐스트
-      if (this.io) {
-        this.io.to(`post:${comment.postId}`).emit('comment:new', {
-          id: comment.id,
-          content: comment.content,
-          author: comment.author.name || comment.author.email,
-          timestamp: comment.createdAt.toISOString(),
-        });
-      }
+      // 같은 게시물 채널 구독자들에게 실시간 브로드캐스트
+      await centrifugo.publish(CHANNELS.postComments(comment.postId), {
+        type: 'comment:new',
+        id: comment.id,
+        content: comment.content,
+        author: comment.author.name || comment.author.email,
+        timestamp: comment.createdAt.toISOString(),
+      });
     } catch (error) {
       console.error('Failed to notify new comment:', error);
     }
   }
 
-  // 멘션 알림
+  /**
+   * 멘션 알림
+   */
   async notifyMention(mentionedUserId: string, postId: string, mentionerName: string): Promise<void> {
     try {
       const post = await db.post.findUnique({
@@ -257,7 +210,7 @@ class RealtimeNotificationSystem {
         message: `${mentionerName}님이 당신을 언급했습니다.`,
         userId: mentionedUserId,
         priority: 'high',
-        channels: ['web', 'sms'],
+        channels: ['web'],
         data: {
           postId,
           categorySlug: post.menu?.slug,
@@ -269,49 +222,61 @@ class RealtimeNotificationSystem {
     }
   }
 
-  // 관리자 공지사항
+  /**
+   * 관리자 공지사항
+   */
   async sendAdminAnnouncement(
-    title: string, 
-    message: string, 
+    title: string,
+    message: string,
     priority: 'low' | 'medium' | 'high' = 'medium'
   ): Promise<void> {
     try {
-      // 전체 사용자 목록 조회
-      const users = await db.user.findMany({
-        where: { status: 'ACTIVE' },
-        select: { id: true },
-      });
-
-      // 모든 사용자에게 알림 전송
-      for (const user of users) {
-        await this.sendNotification({
-          type: 'admin',
-          title,
-          message,
-          userId: user.id,
-          priority,
-          channels: priority === 'high' ? ['web', 'sms'] : ['web'],
-        });
-      }
-
-      // 실시간 브로드캐스트
-      await this.broadcastNotification({
-        type: 'system-announcement',
+      // 전체 사용자에게 실시간 브로드캐스트
+      await centrifugo.publish(CHANNELS.announcements(), {
+        type: 'admin:announcement',
         title,
         message,
-        data: { priority },
+        priority,
+        timestamp: new Date().toISOString(),
+      });
+
+      // 관리자 알림 채널에도 발행
+      await centrifugo.publish(CHANNELS.adminNotifications(), {
+        type: 'announcement:sent',
+        title,
+        message,
+        priority,
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
       console.error('Failed to send admin announcement:', error);
     }
   }
 
-  // 사용자 알림 목록 조회
+  /**
+   * 사용자 알림 목록 조회
+   */
   async getUserNotifications(
-    userId: string, 
-    page: number = 1, 
+    userId: string,
+    page: number = 1,
     limit: number = 20
-  ): Promise<any> {
+  ): Promise<{
+    notifications: Array<{
+      id: string;
+      type: string;
+      data: string;
+      createdAt: string;
+      readAt: string | null;
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      totalCount: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    } | null;
+  }> {
     try {
       const skip = (page - 1) * limit;
 
@@ -327,9 +292,11 @@ class RealtimeNotificationSystem {
 
       return {
         notifications: notifications.map(notification => ({
-          ...notification,
+          id: notification.id,
+          type: notification.type,
+          data: notification.data,
           createdAt: notification.createdAt.toISOString(),
-          updatedAt: notification.updatedAt.toISOString(),
+          readAt: notification.readAt?.toISOString() || null,
         })),
         pagination: {
           page,
@@ -346,15 +313,17 @@ class RealtimeNotificationSystem {
     }
   }
 
-  // 알림 읽음 처리
+  /**
+   * 알림 읽음 처리
+   */
   async markNotificationAsRead(notificationId: string, userId: string): Promise<boolean> {
     try {
       await db.notification.updateMany({
-        where: { 
+        where: {
           id: notificationId,
           userId, // 권한 확인
         },
-        data: { isRead: true },
+        data: { readAt: new Date() },
       });
 
       return true;
@@ -364,12 +333,14 @@ class RealtimeNotificationSystem {
     }
   }
 
-  // 모든 알림 읽음 처리
+  /**
+   * 모든 알림 읽음 처리
+   */
   async markAllNotificationsAsRead(userId: string): Promise<boolean> {
     try {
       await db.notification.updateMany({
-        where: { userId, isRead: false },
-        data: { isRead: true },
+        where: { userId, readAt: null },
+        data: { readAt: new Date() },
       });
 
       return true;
@@ -379,17 +350,92 @@ class RealtimeNotificationSystem {
     }
   }
 
-  // 읽지 않은 알림 수 조회
+  /**
+   * 읽지 않은 알림 수 조회
+   */
   async getUnreadCount(userId: string): Promise<number> {
     try {
       const count = await db.notification.count({
-        where: { userId, isRead: false },
+        where: { userId, readAt: null },
       });
 
       return count;
     } catch (error) {
       console.error('Failed to get unread count:', error);
       return 0;
+    }
+  }
+
+  /**
+   * 이벤트 실시간 통계 발행
+   */
+  async publishEventStats(eventId: string, stats: {
+    totalParticipants: number;
+    options: Array<{ id: string; count: number; percentage: number }>;
+    recentParticipants: Array<{
+      userId: string;
+      username: string;
+      choice: string;
+      timestamp: number;
+    }>;
+  }): Promise<void> {
+    try {
+      await centrifugo.publish(CHANNELS.eventStats(eventId), {
+        type: 'stats:update',
+        ...stats,
+        timestamp: Date.now(),
+      });
+    } catch (error) {
+      console.error('Failed to publish event stats:', error);
+    }
+  }
+
+  /**
+   * 리더보드 업데이트 발행
+   */
+  async publishLeaderboardUpdate(period: 'daily' | 'weekly' | 'all_time', entries: Array<{
+    rank: number;
+    userId: string;
+    username: string;
+    points: number;
+    wins: number;
+    winRate: number;
+  }>): Promise<void> {
+    try {
+      const channel = period === 'daily'
+        ? CHANNELS.leaderboardDaily()
+        : period === 'weekly'
+        ? CHANNELS.leaderboardWeekly()
+        : CHANNELS.leaderboard();
+
+      await centrifugo.publish(channel, {
+        type: 'leaderboard:update',
+        entries,
+        updatedAt: Date.now(),
+      });
+    } catch (error) {
+      console.error('Failed to publish leaderboard update:', error);
+    }
+  }
+
+  /**
+   * 관리자 메트릭 발행
+   */
+  async publishAdminMetrics(metrics: {
+    activeUsers: number;
+    participationsPerMin: number;
+    pointsToday: number;
+    activeEvents: number;
+    serverLoad: number;
+  }): Promise<void> {
+    try {
+      await centrifugo.publish(CHANNELS.adminMetrics(), {
+        type: 'metrics:update',
+        ...metrics,
+        timestamp: Date.now(),
+      });
+    } catch (error) {
+      console.error('Failed to publish admin metrics:', error);
     }
   }
 }
@@ -427,3 +473,12 @@ export const markAllNotificationsAsRead = (userId: string) =>
 
 export const getUnreadCount = (userId: string) =>
   notificationSystem.getUnreadCount(userId);
+
+export const publishEventStats = (eventId: string, stats: Parameters<typeof notificationSystem.publishEventStats>[1]) =>
+  notificationSystem.publishEventStats(eventId, stats);
+
+export const publishLeaderboardUpdate = (period: 'daily' | 'weekly' | 'all_time', entries: Parameters<typeof notificationSystem.publishLeaderboardUpdate>[1]) =>
+  notificationSystem.publishLeaderboardUpdate(period, entries);
+
+export const publishAdminMetrics = (metrics: Parameters<typeof notificationSystem.publishAdminMetrics>[0]) =>
+  notificationSystem.publishAdminMetrics(metrics);

@@ -23,7 +23,7 @@ interface HealthCheckResult {
     cpu: CheckResult;
   };
   services?: {
-    socketio?: CheckResult;
+    centrifugo?: CheckResult;
     queue?: CheckResult;
     cache?: CheckResult;
     storage?: CheckResult;
@@ -104,7 +104,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (detailed) {
     // 서비스 체크
     services = {
-      socketio: await checkSocketIO(),
+      centrifugo: await checkCentrifugo(),
       queue: await checkQueue(),
       cache: await checkCache(),
       storage: await checkStorage(),
@@ -390,24 +390,35 @@ function checkCPU(): CheckResult {
 }
 
 /**
- * Socket.IO 체크
+ * Centrifugo 체크
  */
-async function checkSocketIO(): Promise<CheckResult> {
+async function checkCentrifugo(): Promise<CheckResult> {
+  const start = performance.now();
+
   try {
-    // Socket.IO 서버 상태 체크
-    const redis = getRedisCluster();
-    const connectedClients = await redis.scard('socketio:connected');
-    
+    // Centrifugo 서버 정보 조회
+    const { centrifugo } = await import('~/lib/centrifugo/client.server');
+    const info = await centrifugo.info();
+
+    const totalClients = info.nodes.reduce((sum, node) => sum + node.num_clients, 0);
+    const totalUsers = info.nodes.reduce((sum, node) => sum + node.num_users, 0);
+    const totalChannels = info.nodes.reduce((sum, node) => sum + node.num_channels, 0);
+
     return {
       status: 'ok',
+      latency: performance.now() - start,
       details: {
-        connectedClients,
+        nodes: info.nodes.length,
+        connectedClients: totalClients,
+        connectedUsers: totalUsers,
+        activeChannels: totalChannels,
       },
     };
   } catch (error) {
     return {
       status: 'warning',
-      message: 'Unable to check Socket.IO status',
+      message: `Unable to check Centrifugo status: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      latency: performance.now() - start,
     };
   }
 }

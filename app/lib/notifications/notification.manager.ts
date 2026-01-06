@@ -6,7 +6,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '~/lib/db.server';
 import { getRedisCluster } from '../redis/cluster.server';
-// Socket.IO는 런타임에만 사용 가능
+import { centrifugo } from '../centrifugo/client.server';
+import { CHANNELS } from '../centrifugo/channels';
 import {
   Notification,
   NotificationType,
@@ -48,7 +49,6 @@ interface NotificationManagerConfig {
  */
 export class NotificationManager {
   private redis = getRedisCluster();
-  private socket: any = null; // Socket.IO will be initialized at runtime
   private config: Required<NotificationManagerConfig>;
   private processingBatch = false;
   
@@ -246,17 +246,20 @@ export class NotificationManager {
    * 인앱 알림 전송
    */
   private async sendInAppNotification(notification: Notification): Promise<void> {
-    // Socket.IO로 실시간 전송 (런타임에만 사용 가능)
-    if (this.socket) {
-      await this.socket.sendToUser(notification.userId, 'new-notification', {
+    // Centrifugo를 통해 실시간 전송
+    try {
+      await centrifugo.publish(CHANNELS.personal(notification.userId), {
+        type: 'new-notification',
         id: notification.id,
-        type: notification.type,
+        notificationType: notification.type,
         priority: notification.priority,
         data: notification.data,
         createdAt: notification.createdAt,
       });
+    } catch (error) {
+      console.error('Failed to send in-app notification via Centrifugo:', error);
     }
-    
+
     // 캐시 무효화
     await this.invalidateUserCache(notification.userId);
   }
@@ -306,29 +309,32 @@ export class NotificationManager {
    */
   async markAsRead(notificationId: string, userId: string): Promise<void> {
     const notification = await this.getNotification(notificationId);
-    
+
     if (!notification || notification.userId !== userId) {
       throw new Error('알림을 찾을 수 없습니다.');
     }
-    
+
     notification.status = NotificationStatus.READ;
     notification.readAt = new Date();
-    
+
     await this.updateNotification(notification);
-    
-    // Socket.IO로 읽음 상태 전송 (런타임에만 사용 가능)
-    if (this.socket) {
-      await this.socket.sendToUser(userId, 'notification-read', {
+
+    // Centrifugo를 통해 읽음 상태 전송
+    try {
+      await centrifugo.publish(CHANNELS.personal(userId), {
+        type: 'notification-read',
         id: notificationId,
         readAt: notification.readAt,
       });
+    } catch (error) {
+      console.error('Failed to send notification read status via Centrifugo:', error);
     }
-    
+
     // 메트릭 업데이트
     if (this.config.enableMetrics) {
       this.metrics.read++;
     }
-    
+
     // 이벤트 발생
     this.emitEvent({
       type: 'read',
@@ -762,10 +768,13 @@ export class NotificationManager {
   }
   
   private emitEvent(event: NotificationEvent): void {
-    // Socket.IO로 이벤트 발생 (런타임에만 사용 가능)
-    if (this.socket) {
-      this.socket.broadcast('notification-event', event);
-    }
+    // Centrifugo를 통해 이벤트 브로드캐스트
+    centrifugo.publish(CHANNELS.adminNotifications(), {
+      type: 'notification-event',
+      event,
+    }).catch(error => {
+      console.error('Failed to emit notification event via Centrifugo:', error);
+    });
   }
   
   /**
